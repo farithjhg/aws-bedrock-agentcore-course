@@ -1,0 +1,8 @@
+lab_state.json
+lab_state.json.bak
+.venv/
+NovaAssist/agentcore/.env.local
+NovaAssist/agentcore/.cli/
+__pycache__/
+.ipynb_checkpoints/
+partidas/
