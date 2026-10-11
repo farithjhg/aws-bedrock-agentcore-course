@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 12: el visor de eventos y los exámenes · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+
+
+.gantt rect.span { fill: var(--board-3); stroke: var(--copper-dim); cursor: pointer; }
+.gantt rect.span.sel { stroke: var(--led); stroke-width: 2.5; fill: var(--board-2); }
+.gantt rect.span.bedrock { fill: #3b3f1f; } .gantt rect.span.gateway { fill: #173f53; } .gantt rect.span.lambda { fill: #2f3f1a; } .gantt rect.span.ci { fill: #1f3b3b; }
+.gantt text { font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 11px; fill: var(--silk); pointer-events: none; }
+.gantt text.ms { fill: var(--silk-dim); }
+.log { font: 0.78rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 0.6rem 0.7rem; color: var(--silk-dim); white-space: pre-wrap; overflow-wrap: anywhere; }
+.veredicto { display: grid; grid-template-columns: 2.2rem 1fr; gap: 0.4rem; font-size: 0.85rem; background: var(--board-3); border-radius: 6px; padding: 0.35rem 0.5rem; margin-top: 4px; color: var(--silk); }
+.veredicto.mal { outline: 2px solid var(--bad); }
+.veredicto .motivo { color: var(--silk-dim); display: block; }
+.tasas { display: flex; flex-direction: column; gap: 4px; margin-top: 0.3rem; font-size: 0.82rem; }
+.tasas div { display: grid; grid-template-columns: 9rem 1fr 3.2rem; gap: 0.5rem; align-items: center; color: var(--silk); }
+.tasas i { display: block; height: 10px; background: var(--copper); border-radius: 3px; }
+.tasas .pico i { background: var(--bad); }
+.mandos label { display: block; color: var(--silk); font-size: 0.9rem; margin-top: 0.4rem; }
+.mandos output { font: 700 0.95rem var(--display); color: var(--led); }
+
+</style>
+</head>
+<body>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="visto" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="visto" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><span class="actual" title="Observabilidad y evaluación" aria-current="page">12</span><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>El visor de eventos y los exámenes</h1>
+  <p class="componente">Componente agéntico: observabilidad y evaluación. Capítulo 12.</p>
+  <p class="escena"><strong>Comité de dirección.</strong> «¿Qué tal funciona Nova Assist?». Respuesta: «Bien, creo». Silencio.</p>
+  <p>Es la conversación del molinillo con cupón. Mira qué puedes reconstruir de ella con logs sueltos y qué con una traza completa; después pasa el examen con un juez y decide qué parte del tráfico evaluar.</p>
+</header>
+
+<section class="laboratorio" aria-label="Visor de trazas y evaluación">
+  <div class="placa">
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde vive el agente">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+      </div>
+    </div>
+    <div class="rejilla" style="grid-template-columns: 1.7fr 1fr">
+      <div class="panel"><h3 id="titulo-traza">Una conversación por dentro</h3><div id="traza"></div></div>
+      <div class="panel"><h3>Detalle del paso</h3><div id="detalle" class="total">Pulsa un tramo de la traza.</div></div>
+    </div>
+    <div class="paneles" style="grid-template-columns: 1fr 1fr">
+      <div class="panel"><h3 id="titulo-examen">El examen: un juez con rúbrica</h3><div id="examen"></div><div class="mandos" id="mandos" hidden><label>Tráfico evaluado online: <input type="range" id="muestreo" min="0" max="100" step="5" value="10"> <output id="muestreo-out">10 %</output></label><p class="total" id="muestreo-texto"></p></div></div>
+      <div class="panel"><h3>Lo que revelan los datos (Athena sobre Iceberg)</h3><div class="tasas" id="tasas"></div><p class="total">Tasa de devolución por producto en 90 días. Uno destaca muy por encima del resto: guarda la pregunta para el capítulo 14.</p></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+    <div class="controles">
+      <button type="button" class="boton primario" id="evaluar">Pasar el examen (3 casos)</button>
+    </div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p><strong>Observabilidad</strong> es poder reconstruir cada decisión del agente: qué recibió el modelo, qué herramienta propuso, qué decidió Policy, cuánto tardó Athena, qué calculó el Code Interpreter. Con <code>print()</code> y logs sueltos se sabe que «algo pasó»; con <strong>trazas distribuidas</strong> (OpenTelemetry) se sigue una conversación de principio a fin a través de Runtime, Memory, Gateway, Lambda y Code Interpreter, con sus tiempos y sus tokens.</p>
+  <p><strong>Evaluación</strong> es medir la calidad con <strong>casos de referencia</strong> (el <em>golden set</em> que vive en Iceberg) y <strong>jueces</strong>: código, o un modelo con una rúbrica. Un juez con tres casos y alguien mirando funciona en tu notebook y enseña el concepto. En producción hay miles de conversaciones al día, atraviesan varios servicios y nadie está mirando: hace falta evaluar <em>online</em>, sobre tráfico real, <strong>con muestreo</strong>, y guardar el histórico. Evaluar el 100 % con jueces LLM puede duplicar la factura de inferencia: por eso el porcentaje es una decisión, no un detalle.</p>
+  <p>Es el <strong>bucle de retroalimentación</strong> del agente: sin medición no hay mejora, y con ella se paga la deuda del coste (D6), que ahora se mide por conversación y por capítulo. Y la plataforma de datos devuelve el favor: la misma Iceberg que guarda los casos de prueba muestra que un producto se devuelve el triple que los demás.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>El visor de eventos muestra lo que pasó; las evaluaciones con un LLM como juez <strong>opinan</strong> sobre lo que pasó. Hay que calibrar al juez.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>el visor de eventos y los exámenes</strong>. El visor de eventos enseña lo que pasó; los exámenes miden si se hizo bien. Y como el examinador es un modelo, hay que calibrarlo.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué necesitas para saber qué pasó en una conversación que atravesó cinco servicios y nadie miró, y por qué no se evalúa el 100 % del tráfico?</p>
+  <a class="volver" href="index.html">Volver al mapa del agente</a>
+  <p class="pie">La traza del simulador reproduce la forma de una traza real de AgentCore Observability (spans por servicio con tiempos y tokens). Los veredictos del juez y las tasas de devolución son los del dataset sintético.</p>
+</main>
+
+<script>
+
+const SPANS = [
+  { n: "invoke", s: "Runtime", k: "", t0: 0, d: 3400, det: "Sesión 7f3a… · actor C-001 (del JWT) · 3 llamadas al modelo · 5.100 tokens de entrada en total." },
+  { n: "memory.retrieve", s: "Memory", k: "", t0: 30, d: 120, det: "Namespace /preferences/C-001/ · 2 registros recuperados (top_k = 5) · 60 tokens al contexto." },
+  { n: "converse #1", s: "Bedrock", k: "bedrock", t0: 170, d: 900, det: "Entrada 2.310 tokens · salida 48 · propone consultar_pedido(TN-1003)." },
+  { n: "tools/call consultar_pedido", s: "Gateway", k: "gateway", t0: 1090, d: 1350, det: "Token M2M ✓ · Policy: permit (LecturaPermitida) · rate limit 12/100 · target PedidosTarget." },
+  { n: "nova-pedidos", s: "Lambda", k: "lambda", t0: 1110, d: 1300, det: "Athena: SELECT * FROM pedidos WHERE pedido_id = ? · 1,2 s (el tramo más lento: lago de datos, no base transaccional)." },
+  { n: "converse #2", s: "Bedrock", k: "bedrock", t0: 2460, d: 620, det: "Entrada 2.590 tokens · propone code_interpreter con el prorrateo del cupón." },
+  { n: "code_interpreter", s: "Code Interpreter", k: "ci", t0: 3090, d: 140, det: "Sesión de sandbox · round(5999 × 0,9) → 5399 · sin acceso a red." },
+  { n: "converse #3", s: "Bedrock", k: "bedrock", t0: 3240, d: 160, det: "Entrada 2.700 tokens · respuesta final: 53,99 € · total de la conversación: 0,018 $ (precio de ejemplo)." },
+];
+const CASOS = [
+  { id: "E01", p: "¿Dónde está mi pedido TN-1001?", esperado: "Enviado con EnvíosRápidos, llega en 2 días", ok: true, motivo: "usa consultar_envio y da el transportista y la fecha" },
+  { id: "E07", p: "Quiero devolver el robot del TN-1002", esperado: "Fuera de plazo: 33 días desde la entrega", ok: true, motivo: "la Lambda aplica el plazo y el agente lo explica" },
+  { id: "E10", p: "¿Puedo devolver unos auriculares abiertos?", esperado: "No: excepción de higiene, citando la política", ok: false, motivo: "responde que sí: no consultó buscar_politicas (elección de herramienta incorrecta)" },
+];
+const TASAS = [["Robot aspirador S9", 30.1, true], ["Auriculares in-ear", 11.8], ["Cafetera espresso", 9.5], ["Tablet 10\"", 7.2], ["Lámpara de pie", 4.0]];
+let modo = "local", sel = null, evaluado = false;
+
+function pintarTraza() {
+  const el = document.getElementById("traza");
+  if (modo === "local") {
+    el.innerHTML = `<div class="log">[INFO] invoke sesión=7f3a…
+[INFO] tool: consultar_pedido
+[INFO] tool: code_interpreter
+[INFO] respuesta enviada (3,4 s)
+[WARN] print() no sabe qué decidió Policy ni cuánto tardó Athena
+[WARN] cada servicio escribe en su propio log, sin un identificador común</div>
+<p class="total">Se sabe que pasó algo. No se puede reconstruir la decisión ni encontrar el tramo lento.</p>`;
+    return;
+  }
+  const W = 640, L = 150, ancho = W - L - 60, esc = ancho / 3400;
+  let s = `<svg class="gantt" viewBox="0 0 ${W} ${SPANS.length * 26 + 20}" role="img" aria-label="Traza de la conversación">`;
+  SPANS.forEach((sp, i) => {
+    const y = 6 + i * 26, x = L + sp.t0 * esc, w = Math.max(sp.d * esc, 6);
+    const anchoNombre = sp.n.length * 6.3 + 10, dentro = w >= anchoNombre;
+    const xNombre = dentro ? x + 5 : x + w + 6, xMs = dentro ? x + w + 6 : x + w + 6 + anchoNombre;
+    s += `<text x="4" y="${y + 15}">${sp.s}</text><rect class="span ${sp.k} ${sel === i ? "sel" : ""}" data-i="${i}" x="${x}" y="${y}" width="${w}" height="20" rx="4"></rect>
+          <text x="${Math.min(xNombre, W - anchoNombre - 50)}" y="${y + 14}">${sp.n}</text><text class="ms" x="${Math.min(xMs, W - 50)}" y="${y + 14}">${sp.d} ms</text>`;
+  });
+  s += "</svg>";
+  el.innerHTML = s;
+  el.querySelectorAll("rect.span").forEach(r => r.addEventListener("click", () => { sel = +r.dataset.i; pintar(); }));
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  document.getElementById("titulo-traza").textContent = modo === "local" ? "Una conversación por dentro: print() y logs" : "Una conversación por dentro: la traza (OpenTelemetry)";
+  pintarTraza();
+  const det = document.getElementById("detalle");
+  det.innerHTML = modo === "local" ? "Con logs sueltos no hay tramos que pulsar." : (sel === null ? "Pulsa un tramo de la traza." : `<strong style="color:var(--led)">${SPANS[sel].s} · ${SPANS[sel].n}</strong><br>${SPANS[sel].det}`);
+  const ex = document.getElementById("examen");
+  if (!evaluado) ex.innerHTML = "<p class='total'>Tres casos de referencia con su respuesta esperada. El juez (un modelo con rúbrica) compara.</p>";
+  else ex.innerHTML = CASOS.map(c => `<div class="veredicto ${c.ok ? "" : "mal"}"><span>${c.ok ? "✅" : "❌"}</span><span><b>${c.id}</b> «${c.p}»<span class="motivo">Esperado: ${c.esperado}. Juez: ${c.motivo}.</span></span></div>`).join("") + `<p class="total">GoalSuccessRate: 2/3 = 67 %. ${modo === "local" ? "Con tres casos y alguien mirando, vale. ¿Y con miles al día?" : "Con el conjunto completo de Iceberg y evaluación online, se convierte en una métrica continua."}</p>`;
+  document.getElementById("titulo-examen").textContent = modo === "local" ? "El examen: un juez con rúbrica, en tu notebook" : "El examen: evaluación offline y online";
+  const mandos = document.getElementById("mandos");
+  mandos.hidden = modo !== "internet";
+  const m = +document.getElementById("muestreo").value;
+  document.getElementById("muestreo-out").textContent = m + " %";
+  document.getElementById("muestreo-texto").textContent = `${(1000 * m / 100).toLocaleString("es-ES")} conversaciones evaluadas al día de 1.000 · coste de los jueces ≈ +${m} % de la factura de inferencia.`;
+  document.getElementById("tasas").innerHTML = TASAS.map(([n, t, pico]) => `<div class="${pico ? "pico" : ""}"><span>${n}</span><i style="width:${t / 32 * 100}%"></i><span>${t.toLocaleString("es-ES")} %</span></div>`).join("");
+  document.getElementById("leyenda").innerHTML = modo === "local"
+    ? "<strong>En tu máquina</strong>: logs sueltos y un juez sobre tres casos. Funciona a pequeña escala, con alguien mirando."
+    : "<strong>En Internet</strong>: trazas que siguen la conversación por todos los servicios, evaluación con el conjunto de prueba de Iceberg y evaluación online con muestreo. Nadie está mirando, y aun así se sabe.";
+}
+
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; sel = null; pintar(); }));
+document.getElementById("evaluar").addEventListener("click", () => { evaluado = true; pintar(); });
+document.getElementById("muestreo").addEventListener("input", pintar);
+pintar();
+
+</script>
+</body>
+</html>

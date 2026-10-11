@@ -1,0 +1,6 @@
+# Entorno de la demo (tu máquina): notebook, parte local y cliente del agente desplegado.
+jupyterlab
+boto3>=1.40
+pytest
+strands-agents==1.55.1
+bedrock-agentcore[strands-agents]==1.22.0

@@ -1,0 +1,3 @@
+# Copia este archivo como terraform.tfvars y rellena el modelo.
+region   = "eu-west-1"
+model_id = "eu.anthropic.<MODELO>" # ← uno de la lista: ver README, paso 1

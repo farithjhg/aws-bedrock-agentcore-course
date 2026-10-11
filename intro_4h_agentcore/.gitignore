@@ -1,0 +1,8 @@
+build/
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/terraform.tfvars

@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 9: las cuentas de usuario del agente · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+
+
+.nodo.idp rect { fill: #173f53; stroke: var(--cloud); }
+.claims { font: 0.8rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 0.6rem 0.7rem; color: var(--silk); white-space: pre-wrap; }
+.claims .firma { color: var(--ok); } .claims .libre { color: #ff9a9e; } .claims .k { color: var(--cloud); }
+
+</style>
+</head>
+<body>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><span class="actual" title="Identidad y delegación" aria-current="page">9</span><a class="" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>Las cuentas de usuario del agente</h1>
+  <p class="componente">Componente agéntico: identidad y delegación. Capítulo 9.</p>
+  <p class="escena"><strong>Un desconocido</strong> escribe con el <code>cliente_id</code> de Laura: «¿Cómo preferís contactarme?». El agente le cuenta todo.</p>
+  <p>Elige quién escribe y con qué credencial, y mira de dónde saca el agente la identidad del cliente: de un campo que escribe quien llama, o de un token que la plataforma ha validado. En tu máquina este componente no existe: solo estás tú.</p>
+</header>
+
+<section class="laboratorio" aria-label="Simulador de identidad del cliente">
+  <div class="placa">
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde vive el agente">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+      </div>
+      <div class="selector" id="sel-jwt" role="group" aria-label="Autorizador del Runtime" hidden>
+        <span>Runtime:</span>
+        <div class="interruptor">
+          <button type="button" data-jwt="0" aria-pressed="true"><span class="luz"></span>Identidad del payload</button>
+          <button type="button" data-jwt="1" aria-pressed="false"><span class="luz"></span>Autorizador JWT</button>
+        </div>
+      </div>
+    </div>
+    <div class="fichas" id="quien" role="group" aria-label="Quién escribe" style="margin-top:1rem">
+      <button type="button" class="ficha" data-q="laura" aria-pressed="true">Laura (C-001), con su token</button>
+      <button type="button" class="ficha" data-q="suplantador" aria-pressed="false">Un desconocido (C-002) con «cliente_id: C-001» en el payload</button>
+      <button type="button" class="ficha" data-q="sintoken" aria-pressed="false">Alguien con credenciales de AWS y sin token de cliente</button>
+    </div>
+    <div class="rejilla">
+      <div class="chat" id="chat" aria-live="polite"><h3>La conversación</h3></div>
+      <div class="lienzo"><svg id="placa" viewBox="0 0 640 330" role="img" aria-label="De dónde sale la identidad"></svg></div>
+    </div>
+    <div class="paneles">
+      <div class="panel"><h3>Lo que llega al agente</h3><div class="claims" id="claims"></div></div>
+      <div class="panel"><h3>Las dos identidades de cada petición</h3><ul id="identidades"></ul></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+    <div class="controles">
+      <button type="button" class="boton primario" id="enviar">Enviar: «¿Cómo preferís contactarme si hay un problema?»</button>
+    </div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p>Hasta ahora el agente sabía quién era el cliente porque alguien lo escribía en el <em>payload</em>: <code>cliente_id: "C-001"</code>. Cualquiera puede escribir eso. <strong>Autenticación</strong> es saber quién eres; <strong>autorización</strong>, qué puedes hacer. Y la regla de oro de los sistemas agénticos: <strong>la identidad no la escribe ni el usuario en un campo libre ni el modelo como argumento de una herramienta; la aporta la plataforma.</strong></p>
+  <p>Con el <strong>autorizador JWT</strong>, el Runtime valida el token (firma, emisor, caducidad) antes de que tu código se ejecute, y el código toma el <code>actor_id</code> del token. El payload se ignora. Sin token, la invocación se rechaza. Así la memoria de Laura solo se abre con el token de Laura.</p>
+  <p>Hay <strong>dos identidades</strong> en cada petición: la del <strong>agente</strong> (el token M2M con el que llama al Gateway: qué software llama) y la del <strong>cliente</strong> (el JWT: en nombre de quién). Confundirlas abre la puerta a los accesos indebidos. El Gateway, hoy, solo ve la primera: para que el sistema de pedidos filtre por propietario hace falta propagar la segunda con <strong>OBO</strong> (<em>on-behalf-of</em>), que obtiene para el Gateway un token con la identidad del cliente. Hasta entonces, la deuda D1 queda en parcial, y conviene decirlo con honestidad.</p>
+
+  <h2>Y en tu máquina</h2>
+  <p>En tu portátil no hay clientes que identificar: solo estás tú, y el <code>cliente_id</code> es un parámetro que escribes en la celda. Este componente aparece porque los clientes llegan por Internet. AgentCore Identity además guarda credenciales en un Token Vault cifrado y permite actuar en nombre del usuario sin superar sus permisos.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>Iniciar sesión en un ordenador identifica a la persona; aquí hay <strong>dos identidades</strong>, la del agente y la del cliente, y confundirlas abre la puerta a los accesos indebidos.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>las cuentas de usuario</strong>. Iniciar sesión identifica a la persona. Aquí, además, hay que separar la cuenta del agente de la cuenta del cliente.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿quién debe aportar la identidad del cliente, por qué no puede ser ni el payload ni el modelo, y qué dos identidades distintas viajan en cada petición?</p>
+  <a class="volver" href="index.html">Volver al mapa del agente</a>
+  <p class="pie">Los tokens del simulador son esquemáticos. En el laboratorio, el Runtime valida tokens de un pool de Cognito y tu código solo decodifica los claims de un token que ya ha sido verificado.</p>
+</main>
+
+<script>
+
+let modo = "local", quien = "laura", jwt = false, enviado = false;
+
+function nodo(x, y, w, h, titulo, sub, clases = "") {
+  return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
+    <text x="${x + 10}" y="${y + 22}">${titulo}</text>${sub ? `<text class="sub" x="${x + 10}" y="${y + 40}">${sub}</text>` : ""}</g>`;
+}
+function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
+
+function resultado() {
+  if (modo === "local") return { quienEs: "C-001 (tú, escribiéndolo en la celda)", r: "Te avisaríamos por WhatsApp, como prefieres.", bien: true, nota: "en tu máquina solo estás tú" };
+  if (!jwt) {
+    if (quien === "laura") return { quienEs: "C-001, porque el payload lo dice", r: "Te avisaríamos por WhatsApp, como prefieres, nunca por teléfono.", bien: true };
+    if (quien === "suplantador") return { quienEs: "C-001, porque el payload lo dice (¡falso!)", r: "Te avisaríamos por WhatsApp, como prefieres, nunca por teléfono.", mal: true, nota: "fuga: preferencias de Laura a un desconocido" };
+    return { quienEs: "«anonimo» (no hay nada en el payload)", r: "No tengo preferencias registradas para ti.", mal: true, nota: "D7: cualquiera con credenciales de AWS invoca al agente" };
+  }
+  if (quien === "laura") return { quienEs: "C-001, del token validado", r: "Te avisaríamos por WhatsApp, como prefieres, nunca por teléfono.", bien: true };
+  if (quien === "suplantador") return { quienEs: "C-002, del token validado; el payload se ignora", r: "No tengo preferencias registradas para ti. ¿Cómo prefieres que te avisemos?", bien: true, nota: "la memoria de Laura no se abre" };
+  return { quienEs: "nadie: 401 antes de llegar al código", r: "401 Unauthorized: la invocación se rechaza en el Runtime.", bien: true, nota: "sin token no hay cliente" };
+}
+
+function pintarClaims() {
+  const el = document.getElementById("claims");
+  if (modo === "local") { el.innerHTML = `probar_local("...", cliente_id=<span class="libre">"C-001"</span>)\n<span class="libre">← un parámetro que escribes tú</span>`; return; }
+  const payload = quien === "suplantador" ? `{ <span class="k">"prompt"</span>: "...", <span class="k">"cliente_id"</span>: <span class="libre">"C-001"</span> }` : (quien === "laura" ? `{ <span class="k">"prompt"</span>: "...", <span class="k">"cliente_id"</span>: <span class="libre">"C-001"</span> }` : `{ <span class="k">"prompt"</span>: "..." }`);
+  const token = quien === "sintoken" ? `<span class="libre">(sin cabecera Authorization)</span>` : `Authorization: Bearer eyJ…\n  { <span class="k">"username"</span>: <span class="firma">"${quien === "laura" ? "C-001" : "C-002"}"</span>, <span class="k">"client_id"</span>: "nova-web", <span class="k">"exp"</span>: 1h }\n  <span class="firma">← firmado por Cognito; el Runtime verifica firma, emisor y caducidad</span>`;
+  el.innerHTML = `payload (lo escribe quien llama):\n  ${payload}\n\ntoken:\n  ${token}\n\n${jwt ? "actor_id = claims[\"username\"]   # el payload se ignora" : "actor_id = payload.get(\"cliente_id\", \"anonimo\")   # ⚠️ provisional"}`;
+}
+
+function pintarPlaca() {
+  const r = resultado();
+  const etiqueta = quien === "laura" ? ["Laura", "C-001"] : (quien === "suplantador" ? ["Desconocido", "dice ser C-001"] : ["Alguien", "credenciales AWS"]);
+  let s = modo === "local" ? nodo(14, 140, 110, 56, "Tú", "cliente_id a mano", enviado ? "activo" : "") : nodo(14, 140, 110, 56, etiqueta[0], etiqueta[1], enviado ? "activo" : "");
+  if (modo === "local") {
+    s += ruta("M124 168 H200", enviado) + nodo(200, 120, 240, 96, "Tu notebook", "probar_local(cliente_id=...)", enviado ? "activo" : "");
+    s += nodo(215, 176, 210, 30, "no hay nadie que identificar", "", "apagado");
+    s += ruta("M440 168 H500", enviado) + nodo(500, 140, 126, 56, "Memory", "/preferences/C-001/");
+    s += `<text class="suelto" x="200" y="250">Este componente no existe en tu máquina: aparece cuando los clientes llegan por Internet.</text>`;
+  } else {
+    const rechazado = enviado && jwt && quien === "sintoken";
+    s += ruta("M124 168 H180", enviado) + nodo(180, 110, 200, 116, "AgentCore Runtime", jwt ? "autorizador JWT activo" : "sin autorizador JWT", (rechazado ? "malo" : (enviado ? "activo" : "")));
+    s += `<text x="192" y="178" style="fill:${jwt ? "var(--ok)" : "var(--silk-dim)"};font-family:Archivo,sans-serif;font-size:11px;font-weight:700">${jwt ? "1. valida firma, emisor, caducidad" : "1. acepta cualquier llamada con SigV4"}</text>`;
+    s += `<text x="192" y="196" style="fill:${jwt ? "var(--ok)" : "var(--bad)"};font-family:Archivo,sans-serif;font-size:11px;font-weight:700">${jwt ? "2. actor_id ← token" : "2. actor_id ← payload (lo escribe quien llama)"}</text>`;
+    s += `<text x="192" y="214" style="fill:var(--silk-dim);font-family:Archivo,sans-serif;font-size:11px">3. cabecera Authorization al código</text>`;
+    s += nodo(20, 30, 150, 56, "Cognito (IdP)", "emite y firma el JWT", "idp") + ruta("M95 86 V140", enviado && quien !== "sintoken");
+    const pasa = enviado && !rechazado;
+    s += ruta("M380 168 H440", pasa) + nodo(440, 140, 186, 56, "Memory", `/preferences/${r.quienEs.includes("C-002") ? "C-002" : (r.quienEs.includes("anonimo") ? "anonimo" : "C-001")}/`, pasa ? (r.mal ? "malo" : "activo") : "");
+    s += ruta("M280 226 V260", pasa) + nodo(180, 260, 200, 56, "Gateway", "token M2M: identidad del agente", "nube");
+    s += ruta("M380 288 H440", "tenue") + nodo(440, 260, 186, 56, "OBO (pendiente, D1)", "token con la identidad del cliente", "apagado");
+  }
+  document.getElementById("placa").innerHTML = s;
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button[data-modo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  document.querySelectorAll(".interruptor button[data-jwt]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.jwt === "1") === jwt)));
+  document.querySelectorAll("#quien .ficha").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.q === quien)); b.disabled = modo === "local"; });
+  document.getElementById("sel-jwt").hidden = modo !== "internet";
+  const r = resultado();
+  const chat = document.getElementById("chat");
+  chat.innerHTML = "<h3>La conversación</h3>" + (enviado
+    ? `<div class="burbuja u"><span class="quien">${modo === "local" ? "Tú" : (quien === "laura" ? "Laura" : (quien === "suplantador" ? "Desconocido" : "Alguien con credenciales AWS"))}</span>¿Cómo preferís contactarme si hay un problema?</div>
+       <div class="burbuja a ${r.mal ? "mal" : ""} ${r.bien ? "bien" : ""}"><span class="quien">Nova Assist${r.nota ? " · " + r.nota : ""}</span>${r.r}</div>
+       <p class="total">El agente cree que habla con: <strong>${r.quienEs}</strong>.</p>`
+    : "<p class='total'>Pulsa «Enviar».</p>");
+  pintarClaims();
+  document.getElementById("identidades").innerHTML = modo === "local"
+    ? "<li><strong>Del agente:</strong> tus credenciales de AWS, para llamar al modelo.</li><li><strong>Del cliente:</strong> no hay. Eres tú.</li>"
+    : `<li><strong>Del agente:</strong> rol IAM del Runtime y token M2M hacia el Gateway (qué software llama).</li><li><strong>Del cliente:</strong> ${jwt ? "el JWT validado por el Runtime (en nombre de quién)" : "un campo del payload que escribe quien llama"}.</li><li><strong>Hacia el Gateway:</strong> solo viaja la del agente. Propagar la del cliente es OBO (D1 queda parcial).</li>`;
+  document.getElementById("leyenda").innerHTML = modo === "local"
+    ? "<strong>En tu máquina</strong> no hay clientes: el <code>cliente_id</code> es un parámetro de la celda. Nada que identificar."
+    : (jwt ? "<strong>Con el autorizador JWT</strong>, la plataforma valida el token antes de ejecutar tu código y la identidad sale de él. El payload ya no manda."
+           : "<strong>Sin autorizador</strong>, la identidad es lo que diga el payload. Prueba con el desconocido.");
+  pintarPlaca();
+}
+
+document.querySelectorAll(".interruptor button[data-modo]").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; enviado = false; pintar(); }));
+document.querySelectorAll(".interruptor button[data-jwt]").forEach(b => b.addEventListener("click", () => { jwt = b.dataset.jwt === "1"; enviado = false; pintar(); }));
+document.querySelectorAll("#quien .ficha").forEach(b => b.addEventListener("click", () => { quien = b.dataset.q; enviado = false; pintar(); }));
+document.getElementById("enviar").addEventListener("click", () => { enviado = true; pintar(); });
+pintar();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+# Dependencias del agente desplegado (se empaquetan para Linux arm64 con scripts/empaquetar.py).
+# Mismas versiones que el curso completo: strands-agents >= 1.57 rompe la integración de
+# Memory de bedrock-agentcore 1.22 (ImportError: BidiAfterInvocationEvent).
+strands-agents==1.55.1
+bedrock-agentcore[strands-agents]==1.22.0

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 6: la gestión de memoria del agente · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+
+
+.taxi { height: 170px; padding-top: 1.6rem; }
+.barra { display: flex; flex-direction: column-reverse; background: transparent; }
+.barra i { display: block; width: 100%; }
+.barra i.sistema { background: var(--copper-dim); }
+.barra i.herramientas { background: #2d5f7d; }
+.barra i.memoria { background: var(--cloud); }
+.barra i.historial { background: var(--copper); }
+.barra i.actual { background: var(--led); }
+.barra i.cache { background: repeating-linear-gradient(45deg, rgba(0,0,0,0.5) 0 3px, transparent 3px 6px); }
+.leyenda-capas i.cache { background: var(--copper); background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.5) 0 3px, transparent 3px 6px); }
+.leyenda-capas { display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--silk-dim); margin-top: 0.4rem; }
+.leyenda-capas i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 0.3rem; vertical-align: middle; }
+.mandos { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0.6rem 1.2rem; margin-top: 1rem; font-size: 0.92rem; }
+.mandos label { display: block; line-height: 1.9; color: var(--silk); cursor: pointer; }
+.mandos input[type=checkbox] { margin-right: 0.4rem; vertical-align: middle; }
+.mandos input[type=range] { width: 110px; }
+.mandos output { font: 700 0.9rem var(--display); color: var(--led); min-width: 2ch; }
+.cifra { font: 800 1.5rem var(--display); font-stretch: 80%; color: var(--led); }
+.cifra small { font: 400 0.8rem var(--body); color: var(--silk-dim); }
+
+</style>
+</head>
+<body>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><span class="actual" title="Contexto: qué ve el modelo en cada llamada" aria-current="page">6</span><a class="" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>La gestión de memoria del agente</h1>
+  <p class="componente">Componente agéntico: contexto: qué ve el modelo en cada llamada. Capítulo 6.</p>
+  <p class="escena"><strong>Correo de Finanzas:</strong> «¿Por qué la factura de Bedrock se ha triplicado si tenemos los mismos clientes?». Nadie ha añadido clientes: hemos añadido herramientas, memoria e historial.</p>
+  <p>Es la conversación de ocho turnos del laboratorio. Mueve los mandos y mira cómo cambian los tokens de entrada por turno: qué se reenvía en cada llamada, qué se puede recortar y qué se puede cachear. El interruptor cambia quién mira la cuenta: tú, o Finanzas.</p>
+</header>
+
+<section class="laboratorio" aria-label="Simulador del contexto y su coste">
+  <div class="placa">
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Quién mira la cuenta">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina: una conversación</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet: 1.000 al día</button>
+      </div>
+    </div>
+    <div class="mandos">
+      <label><input type="checkbox" id="ventana"> Ventana deslizante: solo los últimos <input type="range" id="n" min="1" max="8" value="4"> <output id="n-out">4</output> turnos</label>
+      <label><input type="checkbox" id="compacto"> Resultados de herramienta compactos (solo los campos necesarios)</label>
+      <label>Registros de memoria por turno (top_k): <input type="range" id="topk" min="0" max="10" value="5"> <output id="topk-out">5</output></label>
+      <label><input type="checkbox" id="cache"> Prefijo estable primero y caché de prompt activada</label>
+    </div>
+    <div class="paneles" style="grid-template-columns: 1.8fr 1fr">
+      <div class="panel"><h3>Tokens de entrada por turno</h3><div class="taxi" id="taxi"></div>
+        <div class="leyenda-capas"><span><i style="background:var(--copper-dim)"></i>prompt de sistema</span><span><i style="background:#2d5f7d"></i>definiciones de herramientas</span><span><i style="background:var(--cloud)"></i>memoria recuperada</span><span><i style="background:var(--copper)"></i>historial</span><span><i style="background:var(--led)"></i>mensaje y resultado actuales</span><span><i class="cache"></i>leído de caché</span></div></div>
+      <div class="panel"><h3 id="titulo-cuenta">La cuenta</h3><div id="cuenta"></div></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p>La API del modelo <strong>no guarda estado</strong>: en cada llamada se reenvía todo. El prompt de sistema, las definiciones de las herramientas, los registros de memoria, los resultados de herramientas anteriores y el historial completo. Y en cada turno el agente no hace una llamada, sino varias: una para decidir qué herramienta usar y otra para responder. Por eso el coste por turno crece con la longitud de la conversación, y el coste total crece más o menos <strong>con el cuadrado</strong>.</p>
+  <p>La <strong>ingeniería de contexto</strong> consiste en decidir qué entra en la ventana, en qué orden y con qué límites. Las palancas que acabas de mover son las del laboratorio: el <strong>prefijo estable</strong> (identidad, reglas, formato) va primero, porque es lo que se puede cachear; el <strong>contenido dinámico</strong> (fecha, canal) va después; el <strong>historial</strong> se limita con una ventana o un resumen; los <strong>resultados de herramientas</strong> se devuelven compactos; y el <code>top_k</code> de memoria y RAG se mantiene pequeño. Más contexto no es mejor: lo irrelevante <strong>diluye la atención</strong> del modelo y alarga la respuesta.</p>
+
+  <h2>Las capas del contexto</h2>
+  <table>
+    <thead><tr><th>Capa</th><th>Contenido</th><th>Estabilidad</th></tr></thead>
+    <tbody>
+      <tr><td>1. Identidad y reglas</td><td>Rol, tono, art. 50, límites, formato</td><td>Estable → cacheable</td></tr>
+      <tr><td>2. Contexto de sesión</td><td>Fecha, canal, idioma</td><td>Por invocación</td></tr>
+      <tr><td>3. Memoria</td><td>Preferencias y hechos del cliente</td><td>Por cliente</td></tr>
+      <tr><td>4. Conocimiento</td><td>Políticas (RAG, capítulo 8)</td><td>Por consulta</td></tr>
+      <tr><td>5. Resultados de herramientas</td><td>Pedidos, envíos</td><td>Por turno</td></tr>
+      <tr><td>6. Historial</td><td>Turnos previos</td><td>Creciente</td></tr>
+    </tbody>
+  </table>
+  <p>Una regla de diseño que sale de aquí: el plazo de devolución no se calcula en el prompt. El modelo decide <em>qué</em> hacer; el código decide <em>si es válido</em> (capítulo 7).</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>Un sistema operativo pagina la memoria sin perder datos; <strong>recortar el contexto sí pierde información</strong>. Hay que elegir qué se olvida.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>la gestión de memoria del sistema operativo</strong>. El sistema operativo decide qué se carga en la RAM, en qué orden y qué se descarga. Aquí lo decides tú, y cada decisión se ve en el taxímetro.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué parte del contexto se reenvía en cada llamada sin cambiar, y cuál podrías dejar de enviar sin que el agente pierda lo importante?</p>
+  <a class="volver" href="index.html">Volver al mapa del agente</a>
+  <p class="pie">Los tokens del simulador son estimaciones didácticas (prompt de 350 tokens, cinco herramientas de 60, registros de memoria de 30, resultados de herramienta de 400 o 60 si son compactos). El precio de ejemplo es 3 $ por millón de tokens de entrada y una décima parte para las lecturas de caché; usa el de tu modelo.</p>
+</main>
+
+<script>
+
+const TURNOS = [
+  { u: "Hola, soy Laura", tool: false }, { u: "¿Dónde está mi pedido TN-1001?", tool: true }, { u: "¿Y quién lo lleva?", tool: true },
+  { u: "¿Qué artículos tiene el TN-1003?", tool: true }, { u: "Quiero devolver la cafetera", tool: true }, { u: "¿Cuánto tardará el reembolso?", tool: false },
+  { u: "¿Me avisáis por WhatsApp?", tool: false }, { u: "Gracias, eso es todo", tool: false },
+];
+const PRECIO = 3 / 1e6, PRECIO_CACHE = 0.3 / 1e6;
+let modo = "local";
+
+function cfg() {
+  return { ventana: document.getElementById("ventana").checked, n: +document.getElementById("n").value,
+           compacto: document.getElementById("compacto").checked, topk: +document.getElementById("topk").value,
+           cache: document.getElementById("cache").checked };
+}
+
+function calcular(c) {
+  const turnos = [], hist = [];
+  for (let i = 0; i < TURNOS.length; i++) {
+    const t = TURNOS[i];
+    const res = t.tool ? (c.compacto ? 60 : 400) : 0;
+    const h = (c.ventana ? hist.slice(-c.n) : hist).reduce((s, x) => s + x, 0);
+    const llamadas = t.tool ? 2 : 1;
+    const capas = { sistema: 390 * llamadas, herramientas: 300 * llamadas, memoria: c.topk * 30 * llamadas, historial: h * llamadas, actual: 20 * llamadas + res };
+    const tokens = Object.values(capas).reduce((s, x) => s + x, 0);
+    const cacheados = c.cache ? 650 * llamadas - (i === 0 ? 650 : 0) : 0;   // el prefijo (sistema fijo + herramientas) se lee de caché a partir de la primera llamada
+    turnos.push({ tokens, cacheados, capas, llamadas });
+    hist.push(20 + 80 + res);
+  }
+  return turnos;
+}
+
+function euros(x) { return x.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " $"; }
+
+function pintar() {
+  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  const c = cfg();
+  document.getElementById("n").disabled = !c.ventana;
+  document.getElementById("n-out").textContent = c.n;
+  document.getElementById("topk-out").textContent = c.topk;
+  const turnos = calcular(c);
+  const max = Math.max(...turnos.map(t => t.tokens), 1000);
+  document.getElementById("taxi").innerHTML = turnos.map((t, i) => {
+    const segs = ["sistema", "herramientas", "memoria", "historial", "actual"].map(k => `<i class="${k}" style="height:${t.capas[k] / max * 100}%" title="${k}: ${t.capas[k]}"></i>`).join("");
+    const cache = t.cacheados ? `<i class="cache" style="height:${t.cacheados / max * 100}%;position:absolute;bottom:0;left:0;right:0" title="leído de caché: ${t.cacheados}"></i>` : "";
+    return `<div class="barra" style="height:${t.tokens / max * 100}%" aria-label="turno ${i + 1}: ${t.tokens} tokens"><span>${t.tokens}</span>${segs}${cache}</div>`;
+  }).join("");
+  const total = turnos.reduce((s, t) => s + t.tokens, 0), cacheados = turnos.reduce((s, t) => s + t.cacheados, 0);
+  const coste = (total - cacheados) * PRECIO + cacheados * PRECIO_CACHE;
+  const nuevo = turnos.reduce((s, t) => s + 20 + 80 + (TURNOS[turnos.indexOf(t)].tool ? (c.compacto ? 60 : 400) : 0), 0);
+  const cuenta = document.getElementById("cuenta");
+  if (modo === "local") {
+    cuenta.innerHTML = `<div class="cifra">${total.toLocaleString("es-ES")} <small>tokens de entrada facturados</small></div>
+      <p class="total">Contenido nuevo de la conversación: ${nuevo.toLocaleString("es-ES")} tokens. Se ha reenviado ${(total / nuevo).toFixed(1)} veces.</p>
+      <p class="total">Turno 1: ${turnos[0].tokens} · turno 8: ${turnos[7].tokens} tokens.${cacheados ? ` De caché: ${cacheados.toLocaleString("es-ES")}.` : ""}</p>
+      <div class="cifra">${euros(coste)} <small>esta conversación (precio de ejemplo)</small></div>`;
+  } else {
+    cuenta.innerHTML = `<div class="cifra">${euros(coste * 1000)} <small>al día, con 1.000 conversaciones como esta</small></div>
+      <div class="cifra">${euros(coste * 30000)} <small>al mes</small></div>
+      <p class="total">${(total * 1000).toLocaleString("es-ES")} tokens de entrada al día${cacheados ? `, ${(cacheados * 1000).toLocaleString("es-ES")} de ellos leídos de caché a una décima parte del precio` : ""}. Finanzas no ve turnos: ve esta cifra.</p>`;
+  }
+  document.getElementById("titulo-cuenta").textContent = modo === "local" ? "La cuenta de esta conversación" : "La cuenta que ve Finanzas";
+  document.getElementById("leyenda").innerHTML = modo === "local"
+    ? "<strong>En tu máquina</strong> ves una conversación: la curva sube turno a turno porque el historial viaja entero en cada llamada. Es diseño del prompt y del historial: funciona igual aquí y en la nube."
+    : "<strong>En Internet</strong> la misma curva se multiplica por los clientes. Se mide por conversación (Observability), se cachea el prefijo (Bedrock), se limita el historial y se ponen límites de tokens por cliente en el Gateway.";
+}
+
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; pintar(); }));
+for (const id of ["ventana", "n", "compacto", "topk", "cache"]) document.getElementById(id).addEventListener("input", pintar);
+pintar();
+
+</script>
+</body>
+</html>

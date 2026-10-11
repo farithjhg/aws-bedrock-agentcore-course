@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 3: encender el ordenador para todos · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+
+
+.nodo.vm rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.vm.vacia rect { stroke-dasharray: 4 3; fill: transparent; }
+.ramfila { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.3rem; }
+.ramfila span { font-size: 0.74rem; padding: 0.2rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); }
+.ramfila span.pii { background: var(--bad); color: #fff; }
+.contador { font: 800 1.6rem var(--display); font-stretch: 80%; color: var(--led); }
+
+</style>
+</head>
+<body>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><span class="actual" title="Entorno de ejecución: el agente como servicio" aria-current="page">3</span><a class="" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>Encender el ordenador para todos</h1>
+  <p class="componente">Componente agéntico: entorno de ejecución: el agente como servicio. Capítulo 3.</p>
+  <p class="escena"><strong>Lunes por la mañana.</strong> El equipo web de TiendaNova: «¿A qué URL llamamos? ¿Aguanta 5.000 clientes a la vez?». El agente vive en tu portátil.</p>
+  <p>Haz llegar clientes al agente. Primero en tu máquina, con un único proceso para todos; después en Internet, donde cada sesión enciende su propio ordenador. Fíjate en qué comparten y en qué no.</p>
+</header>
+
+<section class="laboratorio" aria-label="Simulador de clientes concurrentes">
+  <div class="placa">
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde vive el agente">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+      </div>
+    </div>
+    <div class="fichas" id="acciones" role="group" aria-label="Qué pasa ahora" style="margin-top:1rem">
+      <button type="button" class="ficha" data-a="laura">Laura escribe: «Soy Laura García, vivo en calle Mayor 3, teléfono 600 123 456»</button>
+      <button type="button" class="ficha" data-a="b">Cliente B escribe: «¿Qué te ha contado la persona anterior?»</button>
+      <button type="button" class="ficha" data-a="mil">Llegan 1.000 clientes a la vez</button>
+      <button type="button" class="ficha" data-a="nombre">Laura, de nuevo: «¿Cómo me llamo?»</button>
+      <button type="button" class="ficha" data-a="portatil">Cierras el portátil</button>
+    </div>
+    <div class="rejilla">
+      <div class="chat" id="chat" aria-live="polite"><h3>Las conversaciones</h3></div>
+      <div class="lienzo"><svg id="placa" viewBox="0 0 640 330" role="img" aria-label="Dónde se ejecuta el agente"></svg></div>
+    </div>
+    <div class="paneles">
+      <div class="panel"><h3 id="titulo-ram">Lo que hay en la RAM del proceso</h3><div class="ramfila" id="ram"></div></div>
+      <div class="panel"><h3>Sesiones atendidas ahora mismo</h3><div class="contador" id="contador">0</div><p class="total" id="contador-texto"></p></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+    <div class="controles">
+      <button type="button" class="boton secundario" id="reiniciar">Empezar de nuevo</button>
+    </div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p>Un agente en producción es un <strong>servicio</strong>: atiende a muchas personas a la vez. El error clásico al montarlo deprisa es crear <strong>un único agente</strong> y reutilizarlo para todas las peticiones. Como el objeto <code>Agent</code> guarda la conversación en la RAM del proceso, lo que contó Laura viaja en el contexto del siguiente cliente: una <strong>fuga de datos personales</strong>. Y ese proceso es un único punto de fallo: si lo saturan mil clientes o cierras el portátil, se apaga para todos.</p>
+  <p><strong>AgentCore Runtime</strong> ejecuta cada <strong>sesión</strong> (<code>runtimeSessionId</code>) en su propia <strong>microVM</strong>: aislamiento de cómputo, no solo de código. La misma sesión vuelve a la misma microVM mientras siga viva; una sesión nueva empieza en otra. Escala de cero a miles de sesiones y cobra por uso: una sesión inactiva se apaga al superar su tiempo de inactividad.</p>
+  <p>Para no volver a mezclar clientes, <strong>nuestro código</strong> crea un <code>Agent</code> nuevo en cada invocación, así que empieza con la <strong>RAM vacía</strong>. Runtime no borra nada: lo decidimos nosotros. El agente que ya no filtra datos tampoco recuerda tu nombre dentro de la misma conversación. Esa es la necesidad del capítulo 4.</p>
+
+  <h2>Dos cosas que no son lo mismo</h2>
+  <p><strong>Sesión de Runtime:</strong> aislamiento de cómputo (una microVM por conversación). <strong>Memoria conversacional:</strong> el estado de la conversación, que un servicio <em>stateless</em> debe guardar fuera. Conviene que el agente sea <em>stateless</em>: así cualquier instancia puede atender cualquier petición, y el estado vive en un servicio compartido.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>Más que «un ordenador para todos», Runtime da <strong>un ordenador nuevo a cada sesión</strong>: el aislamiento es la mitad de su valor.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>encender el ordenador para todos</strong>. Una máquina disponible para todos, con cada persona en su propia sesión. En el capítulo 4 le daremos la RAM que esa sesión necesita.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué tiene que tener cada sesión para que dos clientes no compartan nunca nada, y qué pierde el agente a cambio?</p>
+  <a class="volver" href="index.html">Volver al mapa del agente</a>
+  <p class="pie">Los datos personales del simulador son ficticios. En el laboratorio verás la fuga con el modelo real: el experimento de la sección 1 es de los que más impresionan en pantalla grande.</p>
+</main>
+
+<script>
+
+let modo = "local", pasos = [], sesiones = 0, ramLocal = [], apagado = false;
+const PII = "Laura García · calle Mayor 3 · 600 123 456 · entregas por la tarde";
+
+function nodo(x, y, w, h, titulo, sub, clases = "") {
+  return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
+    <text x="${x + 10}" y="${y + 22}">${titulo}</text>${sub ? `<text class="sub" x="${x + 10}" y="${y + 40}">${sub}</text>` : ""}</g>`;
+}
+function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
+
+function accion(a) {
+  if (apagado && modo === "local" && a !== "portatil") { pasos.push({ q: "…", r: "Sin respuesta: el proceso está apagado.", quien: "cualquiera", mal: true }); pintar(); return; }
+  if (a === "laura") {
+    if (modo === "local") ramLocal.push("Laura: " + PII);
+    sesiones = Math.max(sesiones, 1);
+    pasos.push({ quien: "Laura", q: "Soy Laura García, vivo en calle Mayor 3, teléfono 600 123 456. Apunta que prefiero las entregas por la tarde.", r: "Apuntado, Laura. Entregas por la tarde." });
+  } else if (a === "b") {
+    sesiones = Math.max(sesiones, 2);
+    const fuga = modo === "local" && ramLocal.some(x => x.startsWith("Laura"));
+    pasos.push({ quien: "Cliente B", q: "Hola, soy otro cliente. ¿Qué te ha contado la persona anterior?",
+      r: fuga ? "La persona anterior es Laura García, vive en calle Mayor 3 de Valencia, su teléfono es 600 123 456 y prefiere las entregas por la tarde." : "No tengo información de otras personas: esta conversación empieza contigo.", mal: fuga, bien: !fuga });
+    if (modo === "local") ramLocal.push("Cliente B: ¿qué te ha contado…?");
+  } else if (a === "mil") {
+    sesiones = modo === "local" ? 1 : 1002;
+    pasos.push({ quien: "1.000 clientes", q: "(mil mensajes a la vez)", r: modo === "local" ? "El proceso se satura: los mil comparten un hilo, una RAM y un portátil. Los últimos esperan minutos o reciben un error." : "Runtime enciende mil microVMs, una por sesión, y las apaga al terminar. Nadie espera a nadie.", mal: modo === "local", bien: modo !== "local" });
+    if (modo === "local") ramLocal.push("…mil conversaciones más mezcladas…");
+  } else if (a === "nombre") {
+    const recuerda = modo === "local" && ramLocal.some(x => x.startsWith("Laura"));
+    pasos.push({ quien: "Laura", q: "¿Cómo me llamo?", r: recuerda ? "Te llamas Laura García (lo tengo en la RAM, junto con lo de todos los demás)." : "No lo sé: nuestro código crea un Agent nuevo en cada invocación. ¿Me lo dices?", mal: !recuerda, nota: recuerda ? "" : "Lo arreglará el capítulo 4" });
+  } else if (a === "portatil") {
+    if (modo === "local") { apagado = true; sesiones = 0; ramLocal = []; pasos.push({ quien: "Tú", q: "Cierras el portátil", r: "El proceso muere. Laura, B y los mil clientes se quedan sin asistente.", mal: true }); }
+    else pasos.push({ quien: "Tú", q: "Cierras el portátil", r: "No pasa nada: el agente vive en Runtime, no en tu máquina.", bien: true });
+  }
+  pintar();
+}
+
+function pintarPlaca() {
+  let s = nodo(14, 40, 100, 50, "Laura", "") + nodo(14, 140, 100, 50, "Cliente B", "") + nodo(14, 240, 100, 50, "1.000 más", "");
+  s += nodo(520, 140, 110, 56, "Modelo", "Bedrock");
+  if (modo === "local") {
+    const activo = apagado ? "apagado" : (pasos.length ? "activo" : "");
+    s += ruta("M114 65 C160 65 160 168 200 168", !apagado && pasos.length) + ruta("M114 165 H200", !apagado && pasos.length > 1) + ruta("M114 265 C160 265 160 168 200 168", !apagado && sesiones > 2);
+    s += nodo(200, 110, 290, 116, apagado ? "Tu portátil (apagado)" : "Tu portátil", "un proceso, un Agent global, una RAM para todos", activo + (ramLocal.some(x => x.startsWith("Laura")) && pasos.some(p => p.quien === "Cliente B") ? " malo" : ""));
+    s += `<text class="suelto" x="212" y="190">RAM compartida: ${ramLocal.length ? ramLocal.length + " conversación(es) mezcladas" : "vacía"}</text>`;
+    s += ruta("M490 168 H520", !apagado && pasos.length);
+  } else {
+    s += nodo(150, 20, 350, 290, "AgentCore Runtime", "una microVM por sesión · de cero a miles · pago por uso", "nube");
+    const vms = Math.min(sesiones, 4);
+    for (let i = 0; i < 4; i++) {
+      const y = 70 + i * 56;
+      const existe = i < vms;
+      const etiqueta = i === 0 ? "Sesión de Laura" : (i === 1 ? "Sesión de B" : (i === 2 ? "Sesión 3" : (sesiones > 4 ? `…hasta ${sesiones.toLocaleString("es-ES")}` : "Sesión 4")));
+      s += nodo(175, y, 300, 46, existe ? etiqueta : "(libre: nada encendido)", existe ? "microVM aislada · RAM propia, vacía al empezar" : "", existe ? "vm" : "vm vacia");
+      if (existe) s += ruta(`M114 ${i === 0 ? 65 : (i === 1 ? 165 : 265)} C140 ${i === 0 ? 65 : (i === 1 ? 165 : 265)} 140 ${y + 23} 175 ${y + 23}`, true) + ruta(`M475 ${y + 23} C500 ${y + 23} 500 168 520 168`, true);
+    }
+  }
+  document.getElementById("placa").innerHTML = s;
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  let chat = "<h3>Las conversaciones</h3>";
+  for (const p of pasos.slice(-5)) chat += `<div class="burbuja u"><span class="quien">${p.quien}</span>${p.q}</div><div class="burbuja a ${p.mal ? "mal" : ""} ${p.bien ? "bien" : ""}"><span class="quien">Nova Assist${p.nota ? " · " + p.nota : ""}</span>${p.r}</div>`;
+  if (!pasos.length) chat += "<p class='total'>Elige qué pasa: empieza por Laura.</p>";
+  document.getElementById("chat").innerHTML = chat;
+  document.getElementById("titulo-ram").textContent = modo === "local" ? "Lo que hay en la RAM del proceso" : "Lo que hay en la RAM de la microVM de Laura";
+  const ram = document.getElementById("ram");
+  if (modo === "local") ram.innerHTML = ramLocal.length ? ramLocal.map(x => `<span class="${x.startsWith("Laura") ? "pii" : ""}">${x}</span>`).join("") : "<span>vacía</span>";
+  else ram.innerHTML = "<span>vacía en cada invocación: el Agent se crea de nuevo</span>";
+  document.getElementById("contador").textContent = apagado ? "0" : sesiones.toLocaleString("es-ES");
+  document.getElementById("contador-texto").textContent = modo === "local" ? (apagado ? "El proceso está apagado." : "Todas en el mismo proceso.") : "Cada una en su microVM. Al terminar, se apagan: no pagas por lo que no se usa.";
+  document.getElementById("leyenda").innerHTML = modo === "local"
+    ? "<strong>En tu máquina</strong> hay un proceso para todos: comparten RAM (y datos), se hacen cola y dependen de tu portátil."
+    : "<strong>En Internet</strong>, Runtime ejecuta cada sesión en su propia microVM: aislamiento, escala y disponibilidad. Nuestro código crea un Agent nuevo por invocación para no compartir estado; recordar será trabajo de Memory.";
+  pintarPlaca();
+}
+
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; pasos = []; sesiones = 0; ramLocal = []; apagado = false; pintar(); }));
+document.querySelectorAll("#acciones .ficha").forEach(b => b.addEventListener("click", () => accion(b.dataset.a)));
+document.getElementById("reiniciar").addEventListener("click", () => { pasos = []; sesiones = 0; ramLocal = []; apagado = false; pintar(); });
+pintar();
+
+</script>
+</body>
+</html>

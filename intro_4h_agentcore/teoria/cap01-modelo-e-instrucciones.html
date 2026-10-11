@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 1: la ROM del agente · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+
+
+.rom rect.celda { fill: #24604a; stroke: var(--board-3); }
+.rom rect.celda.falta { fill: transparent; stroke: var(--copper-dim); stroke-dasharray: 4 3; }
+.rom rect.celda.pide { stroke: var(--led); stroke-width: 2.5; }
+.rom rect.celda.pide.falta { stroke: var(--bad); }
+.rom text { font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 11px; font-weight: 700; fill: var(--silk); }
+.rom text.falta { fill: var(--silk-dim); font-weight: 400; }
+.rafaga { display: flex; gap: 5px; margin-top: 0.5rem; flex-wrap: wrap; align-items: center; }
+.rafaga i { width: 18px; height: 18px; border-radius: 4px; background: var(--board-3); display: inline-block; transition: background .2s; }
+.rafaga i.ok { background: var(--ok); }
+.rafaga i.mal { background: var(--bad); }
+.rafaga i.retry { background: var(--warn); }
+.rafaga em { font-style: normal; font-size: 0.85rem; color: var(--silk-dim); margin-left: 0.4rem; }
+.conmutador { display: inline-flex; gap: 0.3rem; }
+
+</style>
+</head>
+<body>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><span class="actual" title="Modelo e instrucciones: el razonamiento" aria-current="page">1</span><a class="" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>La ROM del agente</h1>
+  <p class="componente">Componente agéntico: modelo e instrucciones: el razonamiento. Capítulo 1.</p>
+  <p class="escena"><strong>Laura:</strong> «Hola, ¿dónde está mi pedido TN-1001? Dime la fecha exacta de entrega». El asistente responde con una fecha y un transportista… que se ha inventado.</p>
+  <p>Pregúntale al modelo cosas que están en su «ROM» y cosas que no pueden estar, con y sin reglas. Después, cambia el interruptor y lanza una ráfaga de llamadas para ver por dónde viaja cada una.</p>
+</header>
+
+<section class="laboratorio" aria-label="Sonda de la ROM del modelo">
+  <div class="placa">
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde vive el agente">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+      </div>
+      <div class="selector" role="group" aria-label="Instrucciones del agente">
+        <span>Instrucciones:</span>
+        <div class="interruptor conmutador">
+          <button type="button" data-reglas="0" aria-pressed="true"><span class="luz"></span>Sin reglas</button>
+          <button type="button" data-reglas="1" aria-pressed="false"><span class="luz"></span>Con reglas</button>
+        </div>
+      </div>
+    </div>
+    <div class="fichas" id="preguntas" role="group" aria-label="Pregunta de Laura" style="margin-top:1rem"></div>
+    <div class="rejilla">
+      <div class="chat" id="chat" aria-live="polite"><h3>La conversación</h3></div>
+      <div class="lienzo"><svg id="rom" viewBox="0 0 640 300" role="img" aria-label="Qué hay dentro de la ROM del modelo"></svg></div>
+    </div>
+    <div class="paneles">
+      <div class="panel"><h3>Por dónde viaja la llamada al modelo</h3><div class="lienzo"><svg id="ruta" viewBox="0 0 640 170" role="img" aria-label="Recorrido de la llamada"></svg></div></div>
+      <div class="panel"><h3>Ráfaga: 10 clientes a la vez</h3><div class="rafaga" id="rafaga" aria-live="polite"></div><p class="total" id="rafaga-texto"></p>
+        <button type="button" class="boton secundario" id="repetir" style="margin-top:0.6rem">Lanzar otra ráfaga</button></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p>El modelo es una <strong>ROM enorme</strong>: sabe redactar, razonar y muchísimo sobre el mundo, porque todo eso quedó grabado al entrenarlo. Pero es de <strong>solo lectura</strong> y se grabó antes de que existiera TiendaNova: no contiene ningún pedido, ninguna política de la empresa ni nada de lo que ha pasado hoy.</p>
+  <p>Cuando le preguntas algo que <strong>no está en la ROM</strong>, el modelo no deja un hueco: <strong>completa con lo más plausible</strong>. Una fecha, un transportista, una compensación. Suena igual de seguro que cuando sabe. Eso es una alucinación.</p>
+  <p>Las <strong>instrucciones</strong> (el <em>system prompt</em>) no añaden conocimiento: fijan el rol, el tono y los límites. Con la regla «si no dispones de un dato, dilo», el agente reconoce que no sabe. Honesto… e inútil para Laura: para saber dónde está su pedido hará falta algo más que reglas.</p>
+
+  <h2>Y al salir a Internet</h2>
+  <p>En tu máquina, el modelo ya es un servicio remoto: lo llamas con una clave de API guardada en un <code>.env</code>. Con diez clientes a la vez empiezan los <strong>429</strong> (<em>throttling</em>): cada cuenta y región tiene cuotas, y si la aplicación no sabe reintentar, se cae.</p>
+  <p>Con Bedrock, la llamada sale <strong>sin claves</strong> (IAM) a través de un <strong>inference profile <code>eu.</code></strong>, que reparte la inferencia entre varias regiones europeas sin sacar los datos de la UE. Los <strong>reintentos adaptativos</strong> absorben los picos. Ojo: el perfil no elimina las cuotas, las reparte. Por eso la aplicación también debe saber <strong>degradarse con elegancia</strong> y responder algo útil en lugar de caerse.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>Una ROM devuelve exactamente lo que guarda; el modelo <strong>reconstruye</strong> su conocimiento de forma probabilística. Por eso, cuando no sabe, completa con lo plausible: alucina.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>la ROM</strong>. Sabe mucho, es de solo lectura y no sabe nada de nosotros. En el capítulo 2 le daremos periféricos: herramientas para ver los datos reales.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué sabe el modelo de fábrica y qué no puede saber de ninguna manera, por muchas reglas que le pongas?</p>
+  <a class="volver" href="index.html">Volver al mapa del agente</a>
+  <p class="pie">Las respuestas del simulador son ejemplos fijos de lo que suele hacer un modelo con y sin reglas. En el laboratorio verás las respuestas reales, que cambian en cada ejecución.</p>
+</main>
+
+<script>
+
+const PREGUNTAS = [
+  { t: "¿Dónde está mi pedido TN-1001? Dime la fecha exacta.", pide: ["pedidos"],
+    sin: "Tu pedido TN-1001 salió el martes con SEUR y llegará el jueves antes de las 14:00. ¡Gracias por tu paciencia!",
+    con: "Soy Nova Assist, un asistente de inteligencia artificial. Ahora mismo no puedo consultar el estado de tu pedido: no tengo acceso a los datos de pedidos. ¿Quieres que te indique cómo verlo en «Mis pedidos»?" },
+  { t: "¿Qué diferencia hay entre un robot aspirador con mapeo láser y uno sin él?", pide: ["mundo", "lenguaje"],
+    sin: "Los robots con mapeo láser (LiDAR) construyen un plano de la casa y limpian por zonas sin repetir pasadas; los que no lo tienen navegan por rebote o con cámara, y tardan más en cubrir la misma superficie.",
+    con: "Soy Nova Assist, un asistente de IA. Los robots con mapeo láser (LiDAR) construyen un plano de la casa y limpian por zonas sin repetir pasadas; los que no lo tienen navegan por rebote o con cámara, y tardan más en cubrir la misma superficie." },
+  { t: "Mi paquete llega tarde. ¿Qué compensación dais?", pide: ["politicas"],
+    sin: "Por supuesto: en TiendaNova devolvemos los gastos de envío y añadimos un cupón del 10 % en cualquier retraso superior a 24 horas.",
+    con: "Soy Nova Assist, un asistente de IA. No dispongo de la política de retrasos en este momento, así que prefiero no darte una respuesta que pueda ser incorrecta. Puedo indicarte cómo abrir una incidencia de transporte." },
+];
+const CELDAS = [
+  { id: "lenguaje", x: 150, y: 70, w: 150, h: 44, t: "Lenguaje y estilo", falta: false },
+  { id: "mundo", x: 310, y: 70, w: 180, h: 44, t: "Conocimiento general del mundo", falta: false },
+  { id: "razon", x: 150, y: 122, w: 150, h: 44, t: "Razonamiento", falta: false },
+  { id: "normativa", x: 310, y: 122, w: 180, h: 44, t: "Normativa general (UE)", falta: false },
+  { id: "pedidos", x: 150, y: 188, w: 150, h: 44, t: "Pedidos de TiendaNova", falta: true },
+  { id: "politicas", x: 310, y: 188, w: 180, h: 44, t: "Políticas de TiendaNova", falta: true },
+  { id: "hoy", x: 150, y: 240, w: 340, h: 36, t: "Lo que ha pasado hoy", falta: true },
+];
+let modo = "local", reglas = false, pregunta = 0, ultima = null, temporizadores = [];
+
+function nodo(x, y, w, h, titulo, sub, clases = "") {
+  return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
+    <text x="${x + 10}" y="${y + 22}">${titulo}</text>${sub ? `<text class="sub" x="${x + 10}" y="${y + 40}">${sub}</text>` : ""}</g>`;
+}
+function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
+
+function pintarRom() {
+  const p = PREGUNTAS[pregunta];
+  const pide = ultima ? p.pide : [];
+  const falta = pide.some(id => CELDAS.find(c => c.id === id).falta);
+  let s = nodo(20, 120, 110, 56, "Laura", "pregunta", ultima ? "activo" : "");
+  s += ruta("M130 148 H140", !!ultima);
+  s += `<g class="rom"><rect x="140" y="40" width="360" height="248" rx="14" fill="#0b2419" stroke="${ultima ? (falta && !reglas ? "var(--bad)" : "var(--led)") : "var(--copper-dim)"}" stroke-width="2"></rect>
+        <text x="152" y="60" style="fill:var(--copper);font-size:12px">ROM: el modelo, grabado al entrenarlo</text>`;
+  for (const c of CELDAS) {
+    const clase = `celda ${c.falta ? "falta" : ""} ${pide.includes(c.id) ? "pide" : ""}`;
+    s += `<rect class="${clase}" x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="7"></rect>
+          <text class="${c.falta ? "falta" : ""}" x="${c.x + 8}" y="${c.y + 26}">${c.t}</text>`;
+  }
+  s += "</g>";
+  s += ruta("M500 148 H510", !!ultima);
+  const salida = !ultima ? ["Respuesta", ""] : (falta ? (reglas ? ["«No lo sé»", "gracias a la regla"] : ["Inventa", "completa con lo plausible"]) : ["Responde bien", "estaba en la ROM"]);
+  s += nodo(510, 120, 120, 56, salida[0], salida[1], ultima ? (falta && !reglas ? "malo" : "activo") : "");
+  document.getElementById("rom").innerHTML = s;
+}
+
+function pintarRuta() {
+  let s = nodo(12, 56, 118, 58, "Tu agente", modo === "local" ? "clave de API en .env" : "rol IAM, sin claves");
+  if (modo === "local") {
+    s += ruta("M130 85 H250", "activa");
+    s += nodo(250, 56, 150, 58, "API del modelo", "una región, una cuota");
+    s += ruta("M400 85 H520", "activa") + nodo(520, 56, 110, 58, "Modelo", "");
+    s += `<text class="suelto" x="250" y="140">Sin reintentos: cada 429 es un error que ve el cliente.</text>`;
+  } else {
+    s += ruta("M130 85 H215", "activa");
+    s += nodo(215, 56, 150, 58, "Inference profile", "eu. (reparte en la UE)");
+    s += ruta("M365 85 C400 85 400 28 440 28", "activa") + ruta("M365 85 H440", "activa") + ruta("M365 85 C400 85 400 142 440 142", "activa");
+    s += nodo(440, 8, 190, 40, "eu-west-1", "", "nube") + nodo(440, 65, 190, 40, "eu-central-1", "", "nube") + nodo(440, 122, 190, 40, "eu-west-3", "", "nube");
+  }
+  document.getElementById("ruta").innerHTML = s;
+}
+
+function rafaga() {
+  temporizadores.forEach(clearTimeout); temporizadores = [];
+  const cont = document.getElementById("rafaga");
+  cont.innerHTML = Array.from({ length: 10 }, () => "<i></i>").join("");
+  const celdas = [...cont.querySelectorAll("i")];
+  const resultado = Array.from({ length: 10 }, (_, i) => modo === "local" ? (i % 3 === 2 ? "mal" : "ok") : (i === 7 ? "retry" : "ok"));
+  resultado.forEach((r, i) => temporizadores.push(setTimeout(() => { celdas[i].className = r; if (i === 9) texto(resultado); }, 120 * (i + 1))));
+  document.getElementById("rafaga-texto").textContent = "Enviando…";
+}
+function texto(resultado) {
+  const malas = resultado.filter(r => r === "mal").length, retry = resultado.filter(r => r === "retry").length;
+  document.getElementById("rafaga-texto").textContent = modo === "local"
+    ? `ok: ${10 - malas} · 429: ${malas}. Tres clientes ven un error y la aplicación no sabe qué hacer con ellos.`
+    : `ok: 10 · 429: 0. Una llamada se reintentó con backoff (ámbar) y nadie lo notó. Las cuotas siguen existiendo: se reparten.`;
+}
+
+function preguntar() {
+  ultima = PREGUNTAS[pregunta];
+  const p = ultima;
+  const falta = p.pide.some(id => CELDAS.find(c => c.id === id).falta);
+  const clase = falta ? (reglas ? "bien" : "mal") : "bien";
+  document.getElementById("chat").innerHTML = `<h3>La conversación</h3>
+    <div class="burbuja u"><span class="quien">Laura</span>${p.t}</div>
+    <div class="burbuja a ${clase}"><span class="quien">Nova Assist · ${reglas ? "con reglas" : "sin reglas"}</span>${reglas ? p.con : p.sin}</div>
+    <p class="total">${falta ? (reglas ? "Reconoce que no lo sabe: la regla funciona, pero sigue sin poder ayudar." : "Inventado con aplomo: nada de esto está en el modelo.") : "Correcto: esto sí está en la ROM del modelo."}</p>`;
+  pintarRom();
+  leyenda();
+}
+
+function leyenda() {
+  let l = modo === "local"
+    ? "<strong>En tu máquina</strong> el modelo ya es remoto: lo llamas con una clave de API. Funciona… hasta que llegan muchos clientes a la vez."
+    : "<strong>En Internet</strong> el agente llama a Bedrock con su rol IAM, a través del perfil <code>eu.</code>, con reintentos adaptativos y sin sacar los datos de la UE.";
+  if (ultima) {
+    const falta = ultima.pide.some(id => CELDAS.find(c => c.id === id).falta);
+    l = (falta ? (reglas ? "<strong>Honesto e inútil.</strong> Las reglas evitan la invención, pero no aportan datos. " : "<strong>Alucinación.</strong> Lo que falta en la ROM se rellena con lo plausible. ") : "<strong>Estaba en la ROM.</strong> El conocimiento general sí lo tiene. ") + l;
+  }
+  document.getElementById("leyenda").innerHTML = l;
+}
+
+function pintarFichas() {
+  document.getElementById("preguntas").innerHTML = PREGUNTAS.map((p, i) =>
+    `<button type="button" class="ficha" data-i="${i}" aria-pressed="${i === pregunta}">${p.t}</button>`).join("");
+  document.querySelectorAll("#preguntas .ficha").forEach(b => b.addEventListener("click", () => { pregunta = +b.dataset.i; pintarFichas(); preguntar(); }));
+}
+
+document.querySelectorAll(".interruptor button[data-modo]").forEach(b => b.addEventListener("click", () => {
+  modo = b.dataset.modo;
+  document.querySelectorAll(".interruptor button[data-modo]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.modo === modo)));
+  pintarRuta(); rafaga(); leyenda();
+}));
+document.querySelectorAll(".interruptor button[data-reglas]").forEach(b => b.addEventListener("click", () => {
+  reglas = b.dataset.reglas === "1";
+  document.querySelectorAll(".interruptor button[data-reglas]").forEach(x => x.setAttribute("aria-pressed", String((x.dataset.reglas === "1") === reglas)));
+  if (ultima) preguntar(); else { pintarRom(); leyenda(); }
+}));
+document.getElementById("repetir").addEventListener("click", rafaga);
+pintarFichas(); pintarRom(); pintarRuta(); rafaga(); leyenda();
+document.getElementById("chat").innerHTML = `<h3>La conversación</h3><p class="total">Elige una pregunta de Laura y mira qué celda de la ROM necesita.</p>`;
+
+</script>
+</body>
+</html>
