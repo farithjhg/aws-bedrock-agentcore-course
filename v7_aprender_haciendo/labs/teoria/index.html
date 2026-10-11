@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El mapa del agente · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
+
+header.portada { padding: 2.5rem 0 1rem; }
+.entradilla { font-size: 1.15rem; color: var(--ink-2); max-width: 60ch; }
+.mapa { margin: 1.5rem auto 0; max-width: 1100px; padding: 0 1rem; }
+.cabecera-placa { margin-bottom: 1rem; }
+.cabecera-placa p { margin: 0; color: var(--silk-dim); font-size: 0.95rem; max-width: 46ch; }
+.actos { display: grid; grid-template-columns: 1fr 3.4fr 1.6fr; gap: 0.9rem; }
+.acto { border: 1px dashed var(--copper-dim); border-radius: 12px; padding: 0.8rem; }
+.acto h2 { font-size: 0.95rem; margin: 0 0 0.6rem; color: var(--copper); font-stretch: 85%; }
+.chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 0.6rem; }
+.chip { position: relative; text-align: left; background: #0f3024; color: var(--silk); border: 1px solid var(--board-3);
+        border-radius: 8px; padding: 0.65rem 0.6rem 0.55rem; cursor: pointer; font: inherit; min-height: 92px;
+        display: flex; flex-direction: column; justify-content: space-between; transition: transform .15s, border-color .15s; }
+.chip::before, .chip::after { content: ""; position: absolute; left: 10px; right: 10px; height: 4px;
+        background: repeating-linear-gradient(90deg, var(--copper-dim) 0 4px, transparent 4px 9px); }
+.chip::before { top: -5px; } .chip::after { bottom: -5px; }
+.chip:hover { border-color: var(--copper); }
+.chip[aria-pressed="true"] { border-color: var(--led); transform: translateY(-2px); }
+.chip .num { font: 800 1.35rem var(--display); font-stretch: 75%; color: var(--copper); }
+.chip .nombre { font: 700 0.95rem var(--display); font-stretch: 88%; line-height: 1.15; }
+.chip .aws { font-size: 0.74rem; color: var(--cloud); min-height: 1em; margin-top: 0.25rem; }
+.chip .led { position: absolute; top: 0.6rem; right: 0.6rem; width: 10px; height: 10px; border-radius: 50%; }
+.led.funciona { background: var(--ok); box-shadow: 0 0 7px var(--ok); }
+.led.parcial { background: var(--warn); box-shadow: 0 0 7px var(--warn); }
+.led.peligroso { background: var(--bad); box-shadow: 0 0 7px var(--bad); }
+.led.nube { background: var(--cloud); box-shadow: 0 0 7px var(--cloud); }
+.led.apagado { background: #2b4a3c; box-shadow: none; }
+.chip.ausente { border-style: dashed; color: var(--silk-dim); background: transparent; }
+.chip.ausente .num { color: var(--copper-dim); }
+.leyenda { display: flex; gap: 1.1rem; flex-wrap: wrap; margin-top: 1rem; font-size: 0.85rem; color: var(--silk-dim); }
+.leyenda span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.leyenda i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.detalle { margin-top: 1.25rem; background: var(--board-2); border-radius: 12px; padding: 1.1rem 1.25rem; min-height: 9rem; }
+.detalle h3 { font-size: 1.3rem; font-stretch: 88%; }
+.detalle dl { display: grid; grid-template-columns: 11rem 1fr; gap: 0.35rem 1rem; margin: 0.8rem 0 0.4rem; }
+.detalle dt { color: var(--silk-dim); font-size: 0.9rem; }
+.detalle dd { margin: 0; overflow-wrap: anywhere; }
+.detalle a { color: var(--led); font-weight: 700; }
+.detalle .limite-mini { color: var(--silk-dim); font-size: 0.9rem; margin-top: 0.6rem; }
+.patron { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.8rem; margin: 1rem 0; }
+.patron div { border: 1px solid var(--line); border-radius: 10px; padding: 0.7rem 0.8rem; font-size: 0.95rem; }
+.patron strong { display: block; font-family: var(--display); font-stretch: 90%; margin-bottom: 0.2rem; }
+@media (max-width: 820px) { .actos { grid-template-columns: 1fr; } .detalle dl { grid-template-columns: 1fr; } .detalle dt { margin-top: 0.4rem; } }
+</style>
+</head>
+<body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
+<header class="portada lectura">
+  <h1>El mapa del agente</h1>
+  <p class="entradilla">Un agente no es un modelo: es un modelo rodeado de componentes. Laura acaba de escribir a TiendaNova, y para atenderla bien el agente irá necesitando estas piezas, una a una. Cada capítulo enciende un chip.</p>
+</header>
+
+<section class="mapa" aria-labelledby="titulo-placa">
+  <div class="placa">
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde vive el agente">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
+      </div>
+      <p id="titulo-placa" aria-live="polite"></p>
+    </div>
+    <div class="actos" id="actos"></div>
+    <div class="leyenda" aria-hidden="true">
+      <span><i class="led funciona"></i>Funciona en local</span>
+      <span><i class="led parcial"></i>Parcial en local</span>
+      <span><i class="led peligroso"></i>Peligroso en local</span>
+      <span><i class="led nube"></i>Solo existe en Internet</span>
+    </div>
+    <div class="detalle" id="detalle" aria-live="polite"></div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Cómo usar este mapa</h2>
+  <p>En este curso <strong>se aprende haciendo</strong>: empiezas en el laboratorio y la teoría llega cuando la necesitas. Cada notebook sigue el mismo patrón:</p>
+  <div class="patron">
+    <div><strong>✋ Predice</strong>Antes de ejecutar un experimento clave, apuestas qué va a pasar.</div>
+    <div><strong>▶️ Ejecuta</strong>La celda falla, sorprende o confirma. La sorpresa es la escena.</div>
+    <div><strong>🧭 Teoría</strong>El notebook te manda a la página del capítulo con una pregunta concreta.</div>
+    <div><strong>↩️ Vuelve</strong>Regresas al notebook con la respuesta y construyes la pieza.</div>
+  </div>
+  <p>Cada página de teoría tiene una sola interacción y el mismo interruptor que ves arriba, siempre con el mismo significado: <strong>🏠 En tu máquina</strong> es cómo resolverías la necesidad tú, a mano; <strong>☁️ Con AWS</strong>, cómo la resuelve el servicio cuando el agente sale a Internet. Es el principio del curso: <strong>la teoría manda, y AWS entra al salir a Internet</strong>. En tu máquina algunas piezas ni siquiera existen.</p>
+  <p>Pulsa un chip para ver su analogía, qué pasa en local, por qué AWS y el enlace a su página de teoría.</p>
+  <p class="pie">Formación Amazon Bedrock AgentCore, octubre de 2026. Caso de uso: Nova Assist para TiendaNova.</p>
+</main>
+
+<script>
+document.getElementById("sin-js")?.remove();
+
+const DATOS = [{"n": 1, "corto": "Modelo", "componente": "Modelo e instrucciones: el razonamiento", "aws": "Amazon Bedrock", "porQue": "Bedrock: IAM sin claves, perfil `eu.`, cuotas y reintentos", "enLocal": "Funciona: el agente corre en tu notebook (el modelo, eso sí, ya es un servicio remoto).", "estado": "funciona", "analogia": "La ROM", "limite": "Una ROM devuelve exactamente lo que guarda; el modelo **reconstruye** su conocimiento de forma probabilística. Cuando una pregunta se parece a algo que sabe, responde con lo general como si fuera lo particular.", "notebook": "01_agente_simple", "pagina": "cap01-modelo-e-instrucciones.html", "acto": 1, "titulo": "La ROM del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/01_agente_simple.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap01"}, {"n": 2, "corto": "Herramientas", "componente": "Herramientas y bucle del agente: la acción", "aws": "Ninguno todavía", "porQue": "Todavía ninguno", "enLocal": "Funciona: las herramientas son funciones Python dentro del proceso.", "estado": "funciona", "analogia": "Periféricos de entrada y salida", "limite": "Un periférico hace siempre lo mismo; aquí es el **modelo** quien decide qué herramienta usar y con qué argumentos, y puede equivocarse o ser manipulado.", "notebook": "02_herramientas", "pagina": "cap02-herramientas.html", "acto": 1, "titulo": "Los periféricos del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/02_herramientas.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap02"}, {"n": 3, "corto": "Ejecución", "componente": "Entorno de ejecución: el agente como servicio", "aws": "AgentCore Runtime", "porQue": "Runtime: microVM por sesión, escala y disponibilidad", "enLocal": "No aplica: este componente existe porque los clientes están en Internet.", "estado": "nube", "analogia": "Encender el ordenador para todos", "limite": "Más que «un ordenador para todos», Runtime da **un ordenador a cada sesión**, que se apaga tras 15 minutos sin uso (como máximo vive 8 horas): el aislamiento es la mitad de su valor, y lo que guardes dentro dura lo que dure ese ordenador.", "notebook": "03_runtime", "pagina": "cap03-runtime.html", "acto": 2, "titulo": "Encender el ordenador para todos", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/03_runtime.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap03"}, {"n": 4, "corto": "Memoria corta", "componente": "Memoria de trabajo y a corto plazo", "aws": "AgentCore Memory", "porQue": "Memory: la conversación vive fuera del cómputo", "enLocal": "Funciona sin que lo notes: en el capítulo 2 el objeto `Agent` ya guardaba los mensajes en la RAM del proceso. Al desplegar, esa RAM es la de una microVM que se apaga.", "estado": "funciona", "analogia": "La RAM", "limite": "La RAM se lee sin coste; la ventana de contexto **se reprocesa entera en cada llamada y se paga cada vez**. De ahí el taxímetro.", "notebook": "04_memoria_corto_plazo", "pagina": "cap04-memoria-corto-plazo.html", "acto": 2, "titulo": "La RAM del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/04_memoria_corto_plazo.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap04"}, {"n": 5, "corto": "Memoria larga", "componente": "Memoria a largo plazo", "aws": "AgentCore Memory", "porQue": "Memory: extracción, namespaces y borrado gestionados", "enLocal": "Incompleto: podrías guardar un JSON por cliente, pero tendrías que construir tú la extracción, la consolidación, la búsqueda y el borrado (RGPD).", "estado": "parcial", "analogia": "El disco duro", "limite": "Un disco guarda lo que escribes tal cual; la memoria a largo plazo la **extrae y resume un modelo**: puede equivocarse, y puede ser envenenada.", "notebook": "05_memoria_largo_plazo", "pagina": "cap05-memoria-largo-plazo.html", "acto": 2, "titulo": "El disco duro del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/05_memoria_largo_plazo.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap05"}, {"n": 6, "corto": "Contexto", "componente": "Contexto: qué ve el modelo en cada llamada", "aws": "Bedrock (caché de prompt)", "porQue": "Bedrock: prompt caching; el resto es diseño del contexto", "enLocal": "Funciona igual en local y en la nube: es diseño del prompt y del historial.", "estado": "funciona", "analogia": "La gestión de memoria del sistema operativo", "limite": "Un sistema operativo pagina la memoria sin perder datos; **recortar el contexto sí pierde información**. Hay que elegir qué se olvida.", "notebook": "06_contexto_y_coste", "pagina": "cap06-contexto-y-coste.html", "acto": 2, "titulo": "La gestión de memoria del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/06_contexto_y_coste.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap06"}, {"n": 7, "corto": "MCP", "componente": "Interoperabilidad de herramientas (MCP)", "aws": "AgentCore Gateway", "porQue": "Gateway: publicar MCP con autenticación, límites y trazas", "enLocal": "Funciona: un servidor MCP local por *stdio* (sección 0). Deja de bastar cuando otras apps tienen que llamarlo por Internet.", "estado": "funciona", "analogia": "El bus y los controladores", "limite": "Un bus solo transporta; el Gateway además **autentica, limita y autoriza**: es bus y portero a la vez.", "notebook": "07_gateway", "pagina": "cap07-mcp-gateway.html", "acto": 2, "titulo": "El bus del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/07_gateway.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap07"}, {"n": 8, "corto": "RAG", "componente": "Conocimiento: recuperación aumentada (RAG)", "aws": "S3 Vectors + Iceberg", "porQue": "S3 Vectors + Iceberg: índice compartido y con linaje", "enLocal": "Funciona como prueba: un índice en memoria (sección 0). Deja de bastar al desplegar: cada réplica tendría su copia, sin versiones ni linaje.", "estado": "funciona", "analogia": "La biblioteca con su índice", "limite": "En una biblioteca, la signatura lleva siempre al mismo libro; la búsqueda vectorial es **por significado aproximado** y puede traer el libro equivocado. Por eso se mide (*recall@k*).", "notebook": "08_rag_iceberg_s3vectors", "pagina": "cap08-rag.html", "acto": 2, "titulo": "La biblioteca del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/08_rag_iceberg_s3vectors.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap08"}, {"n": 9, "corto": "Identidad", "componente": "Identidad y delegación", "aws": "AgentCore Identity", "porQue": "Identity: tokens validados, Token Vault y OBO", "enLocal": "No aplica: en tu portátil no hay clientes que identificar.", "estado": "nube", "analogia": "Las cuentas de usuario", "limite": "Iniciar sesión en un ordenador identifica a la persona; aquí hay **dos identidades**, la del agente y la del cliente, y confundirlas abre la puerta a los accesos indebidos.", "notebook": "09_identidad", "pagina": "cap09-identidad.html", "acto": 2, "titulo": "Las cuentas de usuario del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/09_identidad.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap09"}, {"n": 10, "corto": "Guardarraíles", "componente": "Guardarraíles y gobernanza", "aws": "Policy + Guardrails", "porQue": "Policy en el Gateway y Guardrails en cada llamada al modelo", "enLocal": "Parcial: una regla en el código de una herramienta funciona… solo para esa herramienta, y una regla en el prompt se puede saltar.", "estado": "parcial", "analogia": "Los permisos y el antivirus", "limite": "Los permisos del sistema son deterministas; el antivirus, heurístico. Aquí igual: **Policy decide con lógica formal** y Guardrails **detecta con probabilidad**. Hacen falta los dos.", "notebook": "10_policy_guardrails", "pagina": "cap10-policy-guardrails.html", "acto": 2, "titulo": "Los permisos y el antivirus del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/10_policy_guardrails.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap10"}, {"n": 11, "corto": "Código", "componente": "Ejecución de código (código como acción)", "aws": "Code Interpreter", "porQue": "Code Interpreter: *sandbox* en microVM", "enLocal": "Peligroso: `exec()` ejecuta en tu máquina el código que escribe un modelo (sección 0).", "estado": "peligroso", "analogia": "El coprocesador matemático", "limite": "El coprocesador está en tu placa; Code Interpreter **está fuera de tu máquina**, en una microVM aislada. Justo eso lo hace seguro.", "notebook": "11_code_interpreter", "pagina": "cap11-code-interpreter.html", "acto": 2, "titulo": "El coprocesador del agente", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/11_code_interpreter.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap11"}, {"n": 12, "corto": "Evaluación", "componente": "Observabilidad y evaluación", "aws": "Observability + Evaluations", "porQue": "Observability, Evaluations y límites de coste", "enLocal": "Funciona a pequeña escala: un juez con rúbrica sobre unos pocos casos (sección 0). No escala a tráfico real ni sigue servicios distribuidos.", "estado": "funciona", "analogia": "El visor de eventos y los exámenes", "limite": "El visor de eventos muestra lo que pasó; las evaluaciones con un LLM como juez **opinan** sobre lo que pasó. Hay que calibrar al juez.", "notebook": "12_observabilidad_evaluacion", "pagina": "cap12-observabilidad-evaluacion.html", "acto": 3, "titulo": "El visor de eventos y los exámenes", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/12_observabilidad_evaluacion.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap12"}, {"n": 13, "corto": "Mejora continua", "componente": "Mejora continua y experimentación", "aws": "Bundles + A/B", "porQue": "Configuration bundles y A/B en el Gateway", "enLocal": "No aplica: experimentar requiere tráfico real repartido entre variantes.", "estado": "nube", "analogia": "Probar una actualización en pocos equipos", "limite": "Una actualización en pocos equipos se prueba sobre máquinas; aquí se prueba **sobre conversaciones reales con clientes**. El muestreo y la evaluación online son obligatorios.", "notebook": "13_ab_testing", "pagina": "cap13-ab-testing.html", "acto": 3, "titulo": "Actualizar en pocos equipos", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/13_ab_testing.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap13"}, {"n": 14, "corto": "Multi-agente", "componente": "Orquestación multi-agente", "aws": "Web Search + Runtime", "porQue": "Web Search, datos en Iceberg y ejecución asíncrona en Runtime", "enLocal": "Funciona: el equipo se diseña y se ejecuta en el notebook. La nube entra para buscar en la web, leer los datos de la empresa y trabajar sin supervisión.", "estado": "funciona", "analogia": "Una red de equipos especializados", "limite": "Los ordenadores de una red comparten ficheros; los agentes **no comparten memoria por defecto**: hay que decidir qué contexto pasa de uno a otro.", "notebook": "14_equipo_investigacion", "pagina": "cap14-multiagente.html", "acto": 3, "titulo": "La red de equipos", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/14_equipo_investigacion.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap14"}, {"n": 15, "corto": "Operación", "componente": "Ciclo de vida y operación", "aws": "CLI + CDK", "porQue": "Versiones, endpoints y puerta de calidad", "enLocal": "No aplica: operar es mantener un sistema desplegado.", "estado": "nube", "analogia": "El mantenimiento", "limite": "Una actualización de un ordenador cambia ficheros; aquí la versión anterior **sigue existiendo intacta**, y el *rollback* es mover un puntero. Lo que no vuelve atrás son los datos que la versión mala ya haya tocado.", "notebook": "15_produccion", "pagina": "cap15-operacion.html", "acto": 3, "titulo": "El mantenimiento", "colab": "https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/15_produccion.ipynb", "escena": "https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap15"}];
+const ACTOS = [[1, "Acto I: nace un agente, en tu máquina"], [2, "Acto II: sale a Internet"], [3, "Acto III: crece y se opera"]];
+let modo = "local";
+let elegido = 1;
+
+function md(t) {
+  return t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\*)([^*]+?)\*(?!\*)/g, "$1<em>$2</em>").replace(/`(.+?)`/g, "<code>$1</code>");
+}
+
+function pintarChips() {
+  const cont = document.getElementById("actos");
+  cont.innerHTML = "";
+  for (const [num, titulo] of ACTOS) {
+    const acto = document.createElement("div");
+    acto.className = "acto";
+    acto.innerHTML = `<h2>${titulo}</h2><div class="chips"></div>`;
+    const chips = acto.querySelector(".chips");
+    for (const d of DATOS.filter(x => x.acto === num)) {
+      const ausente = modo === "local" && d.estado === "nube";
+      const led = modo === "local" ? (ausente ? "apagado" : d.estado) : (d.aws === "Ninguno todavía" ? "funciona" : "nube");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip" + (ausente ? " ausente" : "");
+      b.setAttribute("aria-pressed", String(d.n === elegido));
+      b.setAttribute("aria-label", `Capítulo ${d.n}: ${d.componente}`);
+      b.innerHTML = `<span class="led ${led}"></span><span class="num">${d.n}</span>
+        <span class="nombre">${d.corto}</span>
+        <span class="aws">${modo === "internet" ? d.aws : (ausente ? "No existe en local" : "")}</span>`;
+      b.addEventListener("click", () => { elegido = d.n; pintar(); });
+      chips.appendChild(b);
+    }
+    cont.appendChild(acto);
+  }
+}
+
+function pintarDetalle() {
+  const d = DATOS.find(x => x.n === elegido);
+  document.getElementById("detalle").innerHTML = `
+    <h3>${d.n}. ${d.componente}</h3>
+    <dl>
+      <dt>En el ordenador sería</dt><dd>${d.analogia}</dd>
+      <dt>En tu máquina</dt><dd>${md(d.enLocal)}</dd>
+      <dt>Al salir a Internet</dt><dd>${md(d.porQue)}</dd>
+      <dt>Laboratorio</dt><dd><code>labs/${d.notebook}.ipynb</code> · <a href="${d.colab}" target="_blank" rel="noopener">abrir en Colab</a> · <a href="${d.escena}" target="_blank" rel="noopener">escena en la presentación</a></dd>
+    </dl>
+    <p><a href="${d.pagina}">Abrir la teoría del capítulo ${d.n}: ${d.titulo}</a></p>
+    <p class="limite-mini"><strong>Dónde se rompe la analogía:</strong> ${md(d.limite)}</p>`;
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  document.getElementById("titulo-placa").textContent = modo === "local"
+    ? "En tu máquina, cuatro piezas no existen: aparecen porque los clientes están en Internet."
+    : "Con AWS, cada pieza tiene el servicio que la sostiene.";
+  pintarChips();
+  pintarDetalle();
+}
+
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; pintar(); }));
+const hash = parseInt(location.hash.replace("#cap", ""), 10);
+if (hash >= 1 && hash <= 15) elegido = hash;
+pintar();
+</script>
+</body>
+</html>

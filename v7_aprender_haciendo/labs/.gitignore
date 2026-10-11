@@ -1,0 +1,13 @@
+lab_state.json
+lab_state.json.bak
+.venv/
+NovaAssist/agentcore/.env.local
+NovaAssist/agentcore/.cli/
+__pycache__/
+.ipynb_checkpoints/
+partidas/
+# Lo que crea el curso al ejecutarse (estado de cada participante; en Colab se guarda en Drive)
+datos/
+NovaAssist/
+lambda/
+mcp_local/

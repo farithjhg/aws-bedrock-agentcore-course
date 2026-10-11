@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 13: actualizar en pocos equipos · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
+
+
+.variantes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.4rem; }
+.variante { background: var(--board-3); border-radius: 8px; padding: 0.5rem 0.6rem; font-size: 0.85rem; color: var(--silk); }
+.variante b { color: var(--copper); font-family: var(--display); display: block; }
+.variante.b b { color: var(--cloud); }
+.variante .n { color: var(--silk-dim); font-size: 0.78rem; }
+.grafica text { font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 12px; fill: var(--silk); }
+.grafica text.eje { fill: var(--silk-dim); font-size: 10px; }
+.grafica rect.a { fill: var(--copper); } .grafica rect.b { fill: var(--cloud); }
+.grafica line.ic { stroke: var(--silk); stroke-width: 2; }
+.veredicto { font: 700 1rem var(--display); color: var(--led); margin-top: 0.4rem; }
+.mandos label { display: block; color: var(--silk); font-size: 0.9rem; margin-top: 0.6rem; }
+.mandos output { font: 700 0.95rem var(--display); color: var(--led); }
+
+</style>
+</head>
+<body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="visto" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="visto" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="visto" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><span class="actual" title="Mejora continua y experimentación" aria-current="page">13</span><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>Actualizar en pocos equipos</h1>
+  <p class="componente">Componente agéntico: mejora continua y experimentación. Capítulo 13.</p>
+  <p class="escena"><strong>Viernes, 17:30.</strong> Alguien propone cambiar el prompt «porque es mucho mejor». ¿Para todos los clientes? ¿Ahora?</p>
+  <p>Es el experimento del laboratorio: el chat de visitantes con su prompt actual frente a uno que responde más breve y termina con una pregunta. En tu máquina solo puedes probarlo a mano; con AWS repartes tráfico real y mides. Decide cuánto tráfico mandas a B y cuándo paras: primero con las 40 conversaciones del laboratorio, después con días de tráfico.</p>
+</header>
+
+<section class="laboratorio" aria-label="Simulador de experimento A/B">
+  <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde vive el agente">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
+      </div>
+    </div>
+    <div class="variantes">
+      <div class="variante"><b>A · Control (NovaWebActual)</b>Prompt actual del chat de visitantes.<span class="n" id="n-a"></span></div>
+      <div class="variante b"><b>B · Tratamiento (NovaWebBreve)</b>Igual, más: «responde en dos frases y termina con una pregunta de seguimiento».<span class="n" id="n-b"></span></div>
+    </div>
+    <div class="rejilla">
+      <div class="panel"><h3 id="titulo-grafica">Helpfulness por variante</h3><div id="grafica"></div><div class="veredicto" id="veredicto"></div>
+        <div class="mandos" id="mandos"><label>Tráfico que va a B: <input type="range" id="reparto" min="5" max="50" step="5" value="10"> <output id="reparto-out">10 %</output></label></div></div>
+      <div class="lienzo"><svg id="placa" viewBox="0 0 640 330" role="img" aria-label="Cómo se reparte el tráfico"></svg></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+    <div class="controles">
+      <button type="button" class="boton secundario" id="laboratorio">Simular el laboratorio (40 conversaciones)</button>
+      <button type="button" class="boton primario" id="simular">Simular un día de tráfico (1.000 conversaciones)</button>
+      <button type="button" class="boton secundario" id="promover" disabled>Promover la variante ganadora</button>
+      <button type="button" class="boton secundario" id="reiniciar">Empezar de nuevo</button>
+    </div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p>«Es mejor» es una opinión hasta que se mide. Tres pruebas manuales no distinguen un prompt <strong>diferente</strong> de uno <strong>mejor</strong>: con tan pocas conversaciones, cualquier diferencia cabe dentro del azar. Hacen falta <strong>cientos o miles</strong>, y tienen que ser <strong>reales</strong>: las preguntas que inventa el equipo no son las que hacen los clientes.</p>
+  <p>Para eso hay que poder cambiar el comportamiento <strong>sin redesplegar para todos</strong>. Los <strong>configuration bundles</strong> separan la configuración (prompt, modelo, descripciones de herramientas) del código, y el <strong>Gateway</strong> reparte el tráfico entre las variantes. La <strong>evaluación online</strong> del capítulo 12 mide cada una, y cuando la diferencia es estadísticamente clara se <strong>promueve</strong> la ganadora. Si no lo es, se sigue midiendo o se descarta: también es un resultado.</p>
+  <p>El muestreo y la evaluación online no son opcionales aquí: el experimento corre <strong>sobre conversaciones reales con clientes</strong>. Por eso se empieza con un porcentaje pequeño, y por eso cambios que no afectan al comportamiento se validan con <em>batch evaluations</em> sobre el conjunto de prueba, sin exponer a nadie.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>Una actualización en pocos equipos se prueba sobre máquinas; aquí se prueba <strong>sobre conversaciones reales con clientes</strong>. El muestreo y la evaluación online son obligatorios.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>probar una actualización en pocos equipos</strong>. Una actualización se prueba primero en unos pocos equipos. Aquí los «equipos» son conversaciones reales, así que se mide con cuidado antes de instalarla en todos.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué diferencia hay entre un prompt «diferente» y un prompt «mejor», y cuántas conversaciones hacen falta para distinguirlos?</p>
+  <a class="volver" href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/13_ab_testing.ipynb" data-nb="13_ab_testing">Volver al capítulo 13 y lanzar el experimento</a>
+  <p class="enlaces">▶ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/13_ab_testing.ipynb" target="_blank" rel="noopener">Abrir el capítulo 13 en Colab</a>
+    · 🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap13" target="_blank" rel="noopener">Ver la escena en la presentación</a>
+    · 🗺️ <a href="index.html">El mapa del agente</a></p>
+  <p class="pie">El simulador usa tasas verdaderas ocultas (A 82 %, B 87 % de respuestas útiles) y un generador determinista, con intervalos de confianza del 95 % aproximados. En el laboratorio, las puntuaciones las produce la evaluación online (Builtin.Helpfulness) y el análisis del A/B calcula el p-valor.</p>
+</main>
+
+<script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
+
+let laboratorio = false;
+let modo = "local", dias = 0, nA = 0, kA = 0, nB = 0, kB = 0, manual = null, promovido = false, semilla = 12345;
+const PA = 0.82, PB = 0.87;
+function azar() { semilla = (Math.imul(semilla, 1664525) + 1013904223) >>> 0; return semilla / 4294967296; }
+function ic(k, n) { if (!n) return [0, 0, 0]; const p = k / n, e = 1.96 * Math.sqrt(p * (1 - p) / n); return [p, Math.max(0, p - e), Math.min(1, p + e)]; }
+
+function nodo(x, y, w, h, titulo, sub, clases = "") {
+  return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
+    <text x="${x + 10}" y="${y + 22}">${titulo}</text>${sub ? `<text class="sub" x="${x + 10}" y="${y + 40}">${sub}</text>` : ""}</g>`;
+}
+function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
+
+function simular(conversaciones = 1000) {
+  if (modo === "local") { manual = { a: 3, b: 3 }; pintar(); return; }
+  const reparto = conversaciones === 40 ? 0.5 : +document.getElementById("reparto").value / 100;
+  for (let i = 0; i < conversaciones; i++) {
+    if (azar() < reparto) { nB++; if (azar() < PB) kB++; } else { nA++; if (azar() < PA) kA++; }
+  }
+  if (conversaciones === 1000) dias++; else laboratorio = true;
+  pintar();
+}
+
+function pintarGrafica() {
+  const el = document.getElementById("grafica");
+  if (modo === "local") {
+    el.innerHTML = manual
+      ? `<p class="total">Pruebas manuales: A ${manual.a}/3 · B ${manual.b}/3. Con tres conversaciones inventadas por ti, las dos parecen perfectas.</p>`
+      : `<p class="total">En tu máquina no hay tráfico de clientes. Lo único posible: unas pruebas manuales.</p>`;
+    document.getElementById("veredicto").textContent = manual ? "¿Cuál es mejor? No se sabe. Y cambiar el prompt es redesplegar para todos." : "";
+    return;
+  }
+  const [pa, la, ha] = ic(kA, nA), [pb, lb, hb] = ic(kB, nB);
+  const W = 420, H = 190, y0 = 160, esc = 140;
+  const barra = (x, p, lo, hi, k, etiqueta) => nA + nB ? `<rect class="${k}" x="${x}" y="${y0 - p * esc}" width="90" height="${p * esc}" rx="4"></rect>
+      <line class="ic" x1="${x + 45}" x2="${x + 45}" y1="${y0 - hi * esc}" y2="${y0 - lo * esc}"></line>
+      <line class="ic" x1="${x + 35}" x2="${x + 55}" y1="${y0 - hi * esc}" y2="${y0 - hi * esc}"></line><line class="ic" x1="${x + 35}" x2="${x + 55}" y1="${y0 - lo * esc}" y2="${y0 - lo * esc}"></line>
+      <text x="${x}" y="${y0 + 16}">${etiqueta}</text><text x="${x}" y="${y0 - hi * esc - 8}">${(p * 100).toFixed(1)} % [${(lo * 100).toFixed(0)}–${(hi * 100).toFixed(0)}]</text>` : "";
+  el.innerHTML = `<svg class="grafica" viewBox="0 0 ${W} ${H}" role="img" aria-label="Tasa de éxito por variante con intervalos de confianza">
+    <line x1="30" x2="${W}" y1="${y0}" y2="${y0}" stroke="var(--copper-dim)"></line>
+    ${[0, 50, 100].map(v => `<text class="eje" x="2" y="${y0 - v / 100 * esc + 4}">${v} %</text>`).join("")}
+    ${barra(90, pa, la, ha, "a", `A · ${nA.toLocaleString("es-ES")} conv.`)}${barra(250, pb, lb, hb, "b", `B · ${nB.toLocaleString("es-ES")} conv.`)}
+    ${nA + nB ? "" : `<text x="90" y="90">Todavía no hay tráfico: simula un día.</text>`}</svg>`;
+  let v = "";
+  if (nA + nB) {
+    const claro = lb > ha || la > hb;
+    const cuando = dias ? `tras ${dias} día(s)` : `con ${nA + nB} conversaciones`;
+    v = promovido ? "B promovida: el tratamiento pasa a ser lo que reciben todos los visitantes." : (claro ? `Diferencia clara ${cuando}: los intervalos no se solapan. ${pb > pa ? "B gana." : "A gana."}` : `${cuando[0].toUpperCase() + cuando.slice(1)}, la diferencia aún cabe en el azar: los intervalos se solapan. ${dias ? "Sigue midiendo (o manda más tráfico a B)." : "Es lo que verás en el laboratorio: no promover también es una decisión."}`);
+    document.getElementById("promover").disabled = !(claro && pb > pa) || promovido;
+  } else document.getElementById("promover").disabled = true;
+  document.getElementById("veredicto").textContent = v;
+}
+
+function pintarPlaca() {
+  const reparto = +document.getElementById("reparto").value;
+  let s = nodo(14, 140, 110, 56, "Clientes", modo === "local" ? "ninguno: estás tú" : "tráfico real");
+  if (modo === "local") {
+    s += ruta("M124 168 H210", !!manual) + nodo(210, 110, 230, 116, "Tu portátil", "un prompt para todas las pruebas", manual ? "activo" : "");
+    s += nodo(225, 160, 200, 30, manual ? "3 pruebas a mano con A, 3 con B" : "prompts.py", "", "apagado");
+    s += ruta("M440 168 H520", "tenue") + nodo(520, 140, 106, 56, "Todos", "al redesplegar", "malo");
+    s += `<text class="suelto" x="210" y="260">Cambiar el prompt es redesplegar para todos los clientes a la vez, sin medir antes.</text>`;
+  } else {
+    s += ruta("M124 168 H180", true) + nodo(180, 120, 150, 96, "Gateway", `reparte: A ${100 - (promovido ? 100 : reparto)} % · B ${promovido ? 100 : reparto} %`, "nube activo");
+    s += ruta("M330 150 C360 150 360 90 400 90", !promovido) + ruta("M330 186 C360 186 360 246 400 246", true);
+    s += nodo(400, 62, 226, 56, "Bundle A (control)", "prompt actual · mismo código", promovido ? "apagado" : "") + nodo(400, 218, 226, 56, "Bundle B (tratamiento)", "prompt breve", "activo");
+    s += ruta("M513 118 V140", "tenue") + ruta("M513 218 V196", "tenue") + nodo(430, 140, 170, 56, "Evaluación online", "mide cada variante", "nube");
+    s += `<text class="suelto" x="180" y="310">Configuration bundles: la configuración cambia sin redesplegar; el A/B decide con datos.</text>`;
+  }
+  document.getElementById("placa").innerHTML = s;
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  document.getElementById("mandos").hidden = modo !== "internet";
+  document.getElementById("reparto-out").textContent = document.getElementById("reparto").value + " %";
+  document.getElementById("simular").textContent = modo === "local" ? "Hacer 3 pruebas manuales con cada prompt" : "Simular un día de tráfico (1.000 conversaciones)";
+  document.getElementById("n-a").textContent = modo === "internet" && nA ? `${nA.toLocaleString("es-ES")} conversaciones · ${kA.toLocaleString("es-ES")} útiles` : "";
+  document.getElementById("n-b").textContent = modo === "internet" && nB ? `${nB.toLocaleString("es-ES")} conversaciones · ${kB.toLocaleString("es-ES")} útiles` : "";
+  document.getElementById("titulo-grafica").textContent = modo === "local" ? "¿Cuál es mejor?" : "Helpfulness por variante (IC 95 %)";
+  document.getElementById("laboratorio").hidden = modo !== "internet";
+  pintarGrafica(); pintarPlaca();
+  document.getElementById("leyenda").innerHTML = modo === "local"
+    ? "<strong>En tu máquina</strong> no hay tráfico real: solo pruebas manuales, que no distinguen «diferente» de «mejor». Este componente no existe aquí."
+    : "<strong>Con AWS</strong>, el Gateway reparte las sesiones entre bundles y la evaluación online mide. Empieza con poco tráfico en B: son clientes reales.";
+}
+
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; pintar(); }));
+document.getElementById("simular").addEventListener("click", () => simular(1000));
+document.getElementById("laboratorio").addEventListener("click", () => simular(40));
+document.getElementById("promover").addEventListener("click", () => { promovido = true; pintar(); });
+document.getElementById("reiniciar").addEventListener("click", () => { dias = 0; nA = kA = nB = kB = 0; manual = null; promovido = false; laboratorio = false; semilla = 12345; pintar(); });
+document.getElementById("reparto").addEventListener("input", pintar);
+pintar();
+
+</script>
+</body>
+</html>

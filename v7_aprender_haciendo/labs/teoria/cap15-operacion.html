@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 15: el mantenimiento · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
+
+
+.decision { background: #0f3024; border-radius: 10px; padding: 0.7rem 0.8rem; margin-top: 0.6rem; }
+.decision h4 { font: 700 0.95rem var(--display); color: var(--copper); margin: 0 0 0.4rem; }
+.decision .fb { margin-top: 0.4rem; font-size: 0.88rem; color: var(--silk); }
+.decision .fb b { color: var(--led); }
+.nodo.version rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.version.vieja rect { stroke-dasharray: 4 3; }
+.nodo.endpoint rect { fill: var(--board-2); stroke: var(--copper); }
+.nodo.endpoint.prod rect { stroke: var(--led); stroke-width: 2.5; }
+label.check { display: inline-flex; gap: 0.4rem; align-items: center; color: var(--silk); font-size: 0.9rem; cursor: pointer; }
+.cifra { font: 800 1.3rem var(--display); color: var(--led); }
+
+</style>
+</head>
+<body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="visto" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="visto" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="visto" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="visto" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="visto" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><span class="actual" title="Ciclo de vida y operación" aria-current="page">15</span></nav>
+  <h1>El mantenimiento</h1>
+  <p class="componente">Componente agéntico: ciclo de vida y operación. Capítulo 15.</p>
+  <p class="escena"><strong>Martes, 10:00.</strong> Atención al cliente pide un cambio en las reglas de Nova «para hoy». La última vez que alguien cambió el prompt «solo un poco», el agente dejó de escalar los casos de más de 100 €.</p>
+  <p>Lleva tú el cambio a producción: decide a qué endpoint va la versión nueva, qué nota exiges en la puerta de calidad y qué haces cuando algo sale mal. Prueba con un cambio bueno y con uno malo.</p>
+</header>
+
+<section class="laboratorio" aria-label="Simulador de versiones, endpoints y puerta de calidad">
+  <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde se opera">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
+      </div>
+      <label class="check"><input type="checkbox" id="malo"> El cambio rompe 2 de los 10 casos de prueba</label>
+    </div>
+    <div class="rejilla" style="grid-template-columns: 1fr 1.1fr">
+      <div class="panel">
+        <div class="decision"><h4>1 · ¿A dónde va la versión nueva (v8)?</h4><div class="fichas" id="d1"></div><p class="fb" id="fb1"></p></div>
+        <div class="decision"><h4>2 · Puerta de calidad: GoalSuccessRate mínimo para promover</h4>
+          <label class="total">Umbral: <input type="range" id="umbral" min="50" max="95" step="1" value="60"> <output id="umbral-out">60 %</output></label>
+          <div class="controles" style="margin-top:0.4rem"><button type="button" class="boton primario" id="evaluar">Evaluar v8 en pre y decidir</button></div>
+          <p class="fb" id="fb2"></p></div>
+        <div class="decision"><h4>3 · Una hora después de promover, las quejas suben. ¿Qué haces?</h4><div class="fichas" id="d3"></div><p class="fb" id="fb3"></p></div>
+      </div>
+      <div class="lienzo"><svg id="placa" viewBox="0 0 640 330" role="img" aria-label="Endpoints y versiones del Runtime"></svg></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+    <div class="controles"><button type="button" class="boton secundario" id="reiniciar">Empezar de nuevo</button></div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p>En tu máquina, «desplegar» es reiniciar el proceso con el código nuevo: no hay versiones, todos los usuarios reciben el cambio a la vez y volver atrás es revertir el código y desplegar otra vez, con prisa. Con AgentCore, cada despliegue crea una <strong>versión inmutable</strong> del Runtime, y los clientes no llaman a «el agente», sino a un <strong><em>endpoint</em></strong> (<code>prod</code>) que apunta a una versión concreta. <code>DEFAULT</code> apunta siempre a la última: por eso no es para clientes.</p>
+  <p>La <strong>puerta de calidad</strong> es una <em>batch evaluation</em> sobre el conjunto de prueba, con un umbral fijado <strong>antes</strong> de ver el resultado. Demasiado bajo deja pasar cambios malos; demasiado alto bloquea los buenos. En un sistema real se añade una segunda condición: no empeorar frente a lo que ya está en producción. Si el cambio afecta al comportamiento, un A/B con tráfico real (capítulo 13) decide la promoción.</p>
+  <p>Y el <strong><em>rollback</em></strong> es mover el puntero de <code>prod</code> a la versión anterior, que sigue intacta: segundos con la API, un minuto con la CLI. Lo que no vuelve atrás son los <strong>datos</strong>: lo que la versión mala escribió en la memoria de los clientes o los reembolsos que emitió. Por eso la puerta va antes.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>Una actualización de un ordenador cambia ficheros; aquí la versión anterior <strong>sigue existiendo intacta</strong>, y el <em>rollback</em> es mover un puntero. Lo que no vuelve atrás son los datos que la versión mala ya haya tocado.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>el mantenimiento</strong>. Actualizar con garantías, vigilar y poder volver atrás. Y cuando el sistema deje de usarse, apagarlo entero: es el capítulo 17.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué impide que un cambio malo llegue a todos los clientes, y qué es exactamente un *rollback* en AgentCore?</p>
+  <a class="volver" href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/15_produccion.ipynb" data-nb="15_produccion">Volver al capítulo 15 y llevar el cambio a producción</a>
+  <p class="enlaces">▶ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/15_produccion.ipynb" target="_blank" rel="noopener">Abrir el capítulo 15 en Colab</a>
+    · 🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap15" target="_blank" rel="noopener">Ver la escena en la presentación</a>
+    · 🗺️ <a href="index.html">El mapa del agente</a></p>
+  <p class="pie">Las versiones, los endpoints y la batch evaluation son los del laboratorio (capítulo 15). Las notas del simulador son ejemplos: un cambio bueno saca un 88 % y uno que rompe dos casos, un 76 %; producción está en un 86 %.</p>
+</main>
+
+<script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
+
+let modo = "local", d1 = null, d3 = null, evaluado = null, prod = 7, pre = null;
+const NOTA_PROD = 0.86;
+
+function nodo(x, y, w, h, titulo, sub, clases = "") {
+  return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
+    <text x="${x + 10}" y="${y + 22}">${titulo}</text>${sub ? `<text class="sub" x="${x + 10}" y="${y + 40}">${sub}</text>` : ""}</g>`;
+}
+function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
+
+const OPC1 = { DEFAULT: "Al endpoint DEFAULT", prod: "Directamente a prod", pre: "A un endpoint pre" };
+const FB1 = {
+  local: "En tu máquina no hay endpoints: el proceso que reinicias es el que usan todos. Cambia a «Con AWS».",
+  DEFAULT: "<b>Cuidado:</b> DEFAULT ya apunta a v8 sin que hagas nada (siempre es la última versión). Si algún cliente llama sin qualifier, ya la está usando. Los clientes deben usar prod.",
+  prod: "<b>Así llega a todos sin probar.</b> Es exactamente lo que pasó la última vez.",
+  pre: "<b>✔ Bien.</b> pre apunta a v8 y prod sigue en v7: el equipo prueba y los clientes no notan nada.",
+};
+const OPC3 = { git: "Revertir el código en Git y redesplegar", puntero: "Volver a apuntar prod a v7", borrar: "Borrar la versión v8" };
+const FB3 = {
+  git: "Funciona, pero tarda: compilar, desplegar con CDK, esperar. Y crea una versión v9 igual que v7. Mientras, los clientes siguen sufriendo.",
+  puntero: "<b>✔ Rollback.</b> v7 sigue intacta: prod vuelve a apuntar a ella en un minuto (o en segundos con la API). Lo que no vuelve atrás son los datos que v8 haya escrito.",
+  borrar: "No resuelve nada: prod sigue apuntando a v8 mientras exista, y una versión en uso no se borra. Primero se mueve el puntero.",
+};
+
+function fichas(id, opciones, elegido, al) {
+  document.getElementById(id).innerHTML = Object.entries(opciones).map(([k, t]) => `<button type="button" class="ficha" data-k="${k}" aria-pressed="${elegido === k}">${t}</button>`).join("");
+  document.querySelectorAll(`#${id} .ficha`).forEach(b => b.addEventListener("click", () => al(b.dataset.k)));
+}
+
+function evaluar() {
+  if (modo === "local") { evaluado = "local"; pintar(); return; }
+  const malo = document.getElementById("malo").checked;
+  const nota = malo ? 0.76 : 0.88, umbral = +document.getElementById("umbral").value / 100;
+  evaluado = { nota, umbral, pasa: nota >= umbral, malo };
+  if (evaluado.pasa) prod = 8;
+  pintar();
+}
+
+function pintarPlaca() {
+  let s = "";
+  if (modo === "local") {
+    s += nodo(20, 130, 130, 60, "Clientes", "todos a la vez");
+    s += ruta("M150 160 H250", true) + nodo(250, 120, 200, 80, "Tu proceso", "el código que hayas copiado hoy", d1 || evaluado ? "activo" : "");
+    s += `<text class="suelto" x="40" y="250">Sin versiones ni endpoints: desplegar es reiniciar el proceso para todos,</text>`;
+    s += `<text class="suelto" x="40" y="268">y volver atrás es revertir y volver a desplegar.</text>`;
+  } else {
+    const versiones = [6, 7, 8];
+    versiones.forEach((v, i) => { s += nodo(430, 40 + i * 95, 190, 60, `Versión v${v}`, v === 8 ? "las reglas nuevas" : (v === 7 ? "la que funcionaba" : "anterior"), "version" + (v < 7 ? " vieja" : "")); });
+    const yV = v => 70 + (v - 6) * 95;
+    const ep = [["prod", prod, "lo que usan los clientes"], ["pre", pre, "lo que prueba el equipo"], ["DEFAULT", 8, "siempre la última"]];
+    ep.forEach(([n, v, sub], i) => {
+      const y = 40 + i * 95;
+      s += nodo(150, y, 190, 60, `endpoint ${n}`, v ? `${sub} → v${v}` : "todavía no existe", "endpoint" + (n === "prod" ? " prod" : "") + (v ? "" : " apagado"));
+      if (v) s += ruta(`M340 ${y + 30} C390 ${y + 30} 390 ${yV(v)} 430 ${yV(v)}`, n === "prod" ? "activa" : "tenue");
+    });
+    s += nodo(10, 55, 110, 50, "Clientes", "qualifier=prod") + ruta("M120 80 H150", true);
+    s += nodo(10, 150, 110, 50, "Equipo", "qualifier=pre") + ruta("M120 175 H150", !!pre);
+  }
+  document.getElementById("placa").innerHTML = s;
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  fichas("d1", OPC1, d1, k => { d1 = k; pre = k === "pre" ? 8 : pre; if (k === "prod") prod = 8; pintar(); });
+  document.getElementById("fb1").innerHTML = modo === "local" ? (d1 ? FB1.local : "") : (d1 ? FB1[d1] : "");
+  document.getElementById("umbral-out").textContent = document.getElementById("umbral").value + " %";
+  const fb2 = document.getElementById("fb2");
+  if (!evaluado) fb2.textContent = "";
+  else if (evaluado === "local") fb2.innerHTML = "En tu máquina no hay puerta: alguien decide «a ojo» y el cambio llega a todos. Cambia a «Con AWS».";
+  else {
+    const { nota, umbral, pasa, malo } = evaluado;
+    let t = `v8 saca un <b>${Math.round(nota * 100)} %</b> en pre (prod está en ${Math.round(NOTA_PROD * 100)} %). Umbral: ${Math.round(umbral * 100)} % → ${pasa ? "<b>se promueve</b>: prod apunta ahora a v8." : "<b>no se promueve</b>: prod sigue en v7."} `;
+    if (malo && pasa) t += "Has dejado pasar un cambio que rompe dos casos: el umbral es demasiado bajo. Fíjalo por encima de lo que saca un cambio malo y, mejor aún, exige no empeorar frente a prod.";
+    else if (!malo && !pasa) t += "Has bloqueado un cambio bueno, mejor que producción: el umbral es demasiado alto.";
+    else if (malo && !pasa) t += "✔ La puerta ha hecho su trabajo: ningún cliente ha visto el cambio malo.";
+    else t += "✔ Cambio bueno, promovido. En un sistema real comprobarías además que no empeora frente a prod (88 % ≥ 86 %).";
+    fb2.innerHTML = t;
+  }
+  fichas("d3", OPC3, d3, k => { d3 = k; if (k === "puntero" && modo === "internet") prod = 7; pintar(); });
+  document.getElementById("fb3").innerHTML = d3 ? (modo === "local" ? "En tu máquina solo existe la primera opción: revertir y redesplegar para todos. Cambia a «Con AWS» para ver la diferencia." : FB3[d3]) : "";
+  document.getElementById("leyenda").innerHTML = modo === "local"
+    ? "<strong>En tu máquina</strong> operar es copiar código y reiniciar el proceso: no hay versiones, ni entornos, ni puerta, ni vuelta atrás rápida."
+    : "<strong>Con AWS</strong>, cada despliegue es una versión inmutable; los endpoints son punteros a versiones; la batch evaluation hace de puerta y el rollback es mover un puntero.";
+  pintarPlaca();
+}
+
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; d1 = null; d3 = null; evaluado = null; prod = 7; pre = null; pintar(); }));
+document.getElementById("evaluar").addEventListener("click", evaluar);
+document.getElementById("umbral").addEventListener("input", () => { evaluado = null; prod = d1 === "prod" ? 8 : 7; pintar(); });
+document.getElementById("malo").addEventListener("change", () => { evaluado = null; prod = d1 === "prod" ? 8 : 7; pintar(); });
+document.getElementById("reiniciar").addEventListener("click", () => { d1 = null; d3 = null; evaluado = null; prod = 7; pre = null; pintar(); });
+pintar();
+
+</script>
+</body>
+</html>

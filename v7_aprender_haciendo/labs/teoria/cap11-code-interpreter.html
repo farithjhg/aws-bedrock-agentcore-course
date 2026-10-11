@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 11: el coprocesador del agente · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
+
+
+.codigo { font: 0.8rem/1.45 ui-monospace, "Cascadia Code", Consolas, monospace; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 0.6rem 0.7rem; white-space: pre-wrap; color: var(--silk); overflow-wrap: anywhere; }
+.codigo .c { color: var(--silk-dim); } .codigo .mal { color: #ff9a9e; } .codigo .ok { color: var(--ok); }
+.resultado { font: 800 2rem var(--display); font-stretch: 80%; color: var(--led); margin: 0.3rem 0; }
+.resultado.mal { color: #ff9a9e; }
+.historial { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.historial span { font-size: 0.8rem; padding: 0.2rem 0.5rem; border-radius: 5px; background: var(--board-3); color: var(--silk); }
+.historial span.mal { background: var(--bad); color: #fff; }
+.historial span.ok { background: var(--ok); color: #0b2a1a; }
+.nodo.sandbox rect { fill: #173f53; stroke: var(--cloud); }
+.acceso { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 0.8rem; font-size: 0.85rem; margin-top: 0.4rem; }
+.acceso span.si { color: #ff9a9e; } .acceso span.no { color: var(--ok); }
+
+</style>
+</head>
+<body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="visto" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><span class="actual" title="Ejecución de código (código como acción)" aria-current="page">11</span><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>El coprocesador del agente</h1>
+  <p class="componente">Componente agéntico: ejecución de código (código como acción). Capítulo 11.</p>
+  <p class="escena"><strong>Tres clientes devuelven el molinillo con cupón.</strong> El agente les promete 53,99 €, 54 € y 59,99 €. Uno de ellos es abogado.</p>
+  <p>Pide el mismo cálculo varias veces «de cabeza» y después como código. Luego cambia el interruptor y mira dónde se ejecuta ese código y a qué tiene acceso.</p>
+</header>
+
+<section class="laboratorio" aria-label="Simulador de cálculo con y sin código">
+  <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde se ejecuta el código">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
+      </div>
+    </div>
+    <p class="leyenda-modo" style="min-height:0;margin-top:0.8rem">Cafetera 199,99 € y molinillo 59,99 €, cupón del 10 % sobre el total. Se devuelve solo el molinillo. ¿Cuánto se reembolsa, prorrateando el cupón?</p>
+    <div class="rejilla">
+      <div class="panel"><h3 id="titulo-calculo">El cálculo</h3><div id="calculo"></div></div>
+      <div class="lienzo"><svg id="placa" viewBox="0 0 640 330" role="img" aria-label="Dónde se ejecuta el código"></svg></div>
+    </div>
+    <div class="paneles">
+      <div class="panel"><h3>Historial de respuestas</h3><div class="historial" id="historial"></div><p class="total" id="historial-texto"></p></div>
+      <div class="panel"><h3 id="titulo-acceso">A qué tiene acceso el código</h3><div class="acceso" id="acceso"></div></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+    <div class="controles">
+      <button type="button" class="boton secundario" id="cabeza">Calcular «de cabeza» (el modelo)</button>
+      <button type="button" class="boton primario" id="codigo">Escribir y ejecutar código</button>
+      <button type="button" class="boton secundario" id="reiniciar">Borrar historial</button>
+    </div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p>Un modelo de lenguaje <strong>predice texto</strong>, no calcula. Un prorrateo con decimales puede salirle bien, y los modelos actuales aciertan a menudo, pero nada lo garantiza: si falla, lo dice con la misma seguridad, y nadie puede comprobar cómo llegó a la cifra. Con dinero basta un fallo. La solución es <strong>código como acción</strong>: en lugar de calcular «de cabeza», el agente <strong>escribe un programa y lo ejecuta</strong>. El resultado es exacto, repetible y se puede verificar leyendo el código.</p>
+  <p>El riesgo es dónde se ejecuta. Ese código lo escribe un modelo que puede haber sido manipulado por una inyección. Con <code>exec()</code> corre <strong>en tu máquina</strong>, con tus credenciales de AWS, tus ficheros y tu red: un código «inofensivo» ya puede listar tu directorio personal. <strong>Code Interpreter</strong> lo ejecuta en una <strong>microVM aislada por sesión</strong>, sin tus credenciales ni tus ficheros, que se destruye al terminar.</p>
+  <p>Y una separación importante: <strong>cálculo y límite son independientes</strong>. Code Interpreter calcula 53,99 €; si el importe superara 100 €, Policy frenaría el reembolso igualmente. Cada pieza hace lo suyo.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>El coprocesador está en tu placa; Code Interpreter <strong>está fuera de tu máquina</strong>, en una microVM aislada. Justo eso lo hace seguro.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>el coprocesador matemático</strong>. La CPU razona; el coprocesador calcula. Aquí el coprocesador no está en tu placa: está en otra máquina, y por eso es seguro.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿por qué no puedes fiarte de un cálculo que el modelo hace «de cabeza», aunque acierte, y dónde tiene que ejecutarse el código que escribe un modelo?</p>
+  <a class="volver" href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/11_code_interpreter.ipynb" data-nb="11_code_interpreter">Volver al capítulo 11 y conectar el Code Interpreter</a>
+  <p class="enlaces">▶ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/11_code_interpreter.ipynb" target="_blank" rel="noopener">Abrir el capítulo 11 en Colab</a>
+    · 🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap11" target="_blank" rel="noopener">Ver la escena en la presentación</a>
+    · 🗺️ <a href="index.html">El mapa del agente</a></p>
+  <p class="pie">Los resultados «de cabeza» del simulador exageran a propósito los errores posibles (redondeos, cupón mal prorrateado, cupón ignorado): un modelo actual acierta a menudo, y por eso el error, cuando llega, pasa desapercibido. El código es el que escribiría el agente; el reembolso correcto es 53,99 €.</p>
+</main>
+
+<script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
+
+let modo = "local", historial = [], ultimo = null;
+const MAL = [["54,00 €", "redondea el prorrateo"], ["59,99 €", "ignora el cupón"], ["53,99 €", "esta vez acierta"], ["48,59 €", "aplica el cupón dos veces"], ["53,99 €", "esta vez acierta"], ["54,00 €", "redondea el prorrateo"]];
+const CODIGO = `<span class="c"># código escrito por el agente</span>
+cafetera, molinillo = 19999, 5999        <span class="c"># céntimos</span>
+total = cafetera + molinillo
+pagado_molinillo = round(molinillo * 0.9)  <span class="c"># cupón del 10 % prorrateado</span>
+print(pagado_molinillo)                     <span class="c"># → 5399</span>`;
+
+function nodo(x, y, w, h, titulo, sub, clases = "") {
+  return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
+    <text x="${x + 10}" y="${y + 22}">${titulo}</text>${sub ? `<text class="sub" x="${x + 10}" y="${y + 40}">${sub}</text>` : ""}</g>`;
+}
+function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
+
+function deCabeza() {
+  const [r, motivo] = MAL[historial.length % MAL.length];
+  historial.push({ r, motivo, tipo: "cabeza", ok: r === "53,99 €" });
+  ultimo = historial[historial.length - 1];
+  pintar();
+}
+function conCodigo() {
+  historial.push({ r: "53,99 €", motivo: "round(5999 × 0,9) = 5399 céntimos", tipo: "codigo", ok: true });
+  ultimo = historial[historial.length - 1];
+  pintar();
+}
+
+function pintarPlaca() {
+  const ejecutando = ultimo && ultimo.tipo === "codigo";
+  let s = nodo(14, 140, 120, 56, "Modelo", ejecutando ? "escribe el código" : (ultimo ? "calcula «de cabeza»" : ""), ultimo ? "activo" : "");
+  if (modo === "local") {
+    s += ruta("M134 168 H200", !!ejecutando) + nodo(200, 90, 260, 150, "Tu máquina", "exec(codigo_generado)", ejecutando ? "malo" : "");
+    s += nodo(215, 140, 230, 30, "~/.aws/credentials · ficheros · red", "", "apagado");
+    s += nodo(215, 180, 230, 30, "el código tiene TUS permisos", "", "apagado");
+    s += ruta("M460 168 H520", !!ejecutando) + nodo(520, 140, 106, 56, "Resultado", ejecutando ? "5399" : "", ejecutando ? "activo" : "");
+    s += `<text class="suelto" x="200" y="280">Una inyección que cambie el código generado tendría acceso a todo lo que tú tienes.</text>`;
+  } else {
+    s += ruta("M134 168 H200", !!ejecutando) + nodo(200, 90, 260, 150, "Code Interpreter", "microVM aislada por sesión", "sandbox" + (ejecutando ? " activo" : ""));
+    s += nodo(215, 140, 230, 30, "sin tus credenciales ni ficheros", "", "apagado");
+    s += nodo(215, 180, 230, 30, "se destruye al terminar", "", "apagado");
+    s += ruta("M460 168 H520", !!ejecutando) + nodo(520, 140, 106, 56, "Resultado", ejecutando ? "5399" : "", ejecutando ? "activo" : "");
+    s += `<text class="suelto" x="200" y="280">El resultado vuelve al agente como el de cualquier herramienta. Policy sigue decidiendo el reembolso.</text>`;
+  }
+  document.getElementById("placa").innerHTML = s;
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  const calc = document.getElementById("calculo");
+  if (!ultimo) calc.innerHTML = "<p class='total'>Pide el cálculo de una forma u otra.</p>";
+  else if (ultimo.tipo === "cabeza") calc.innerHTML = `<p class="total">El modelo responde directamente, «de cabeza»:</p><div class="resultado ${ultimo.ok ? "" : "mal"}">${ultimo.r}</div><p class="total">${ultimo.motivo}. Mismo prompt, mismo modelo: otro día, otra cifra.</p>`;
+  else calc.innerHTML = `<p class="total">El modelo escribe un programa y una herramienta lo ejecuta:</p><div class="codigo">${CODIGO}</div><div class="resultado">${ultimo.r}</div><p class="total">${ultimo.motivo}. Exacto y repetible: el código se puede leer y auditar.</p>`;
+  document.getElementById("titulo-calculo").textContent = !ultimo ? "El cálculo" : (ultimo.tipo === "cabeza" ? "El cálculo, de cabeza" : "El cálculo, con código");
+  document.getElementById("historial").innerHTML = historial.map(h => `<span class="${h.tipo === "codigo" ? "ok" : (h.ok ? "" : "mal")}" title="${h.motivo}">${h.tipo === "codigo" ? "⌨ " : "🧠 "}${h.r}</span>`).join("") || "<span>—</span>";
+  const cabeza = historial.filter(h => h.tipo === "cabeza"), distintos = new Set(cabeza.map(h => h.r)).size;
+  document.getElementById("historial-texto").textContent = cabeza.length ? `${cabeza.length} cálculo(s) de cabeza, ${distintos} resultado(s) distinto(s). Con código: siempre 53,99 €.` : "";
+  document.getElementById("titulo-acceso").textContent = modo === "local" ? "A qué tiene acceso el código con exec()" : "A qué tiene acceso el código en Code Interpreter";
+  const acc = modo === "local" ? [["Tu directorio personal", "si"], ["~/.aws/credentials", "si"], ["Tu red y tu VPN", "si"], ["Otros procesos", "si"]] : [["Tu directorio personal", "no"], ["Tus credenciales", "no"], ["Red (configurable, cerrada por defecto)", "no"], ["Otras sesiones", "no"]];
+  document.getElementById("acceso").innerHTML = acc.map(([t, k]) => `<span class="${k}">${k === "si" ? "⚠️ sí" : "✓ no"}</span><span>${t}</span>`).join("");
+  document.getElementById("leyenda").innerHTML = modo === "local"
+    ? "<strong>En tu máquina</strong>, ejecutar con <code>exec()</code> el código que escribe un modelo es ejecutarlo con tus permisos. Peligroso, aunque hoy el código sea inofensivo."
+    : "<strong>Con AWS</strong>, Code Interpreter ejecuta el código en una microVM aislada por sesión, sin credenciales ni ficheros tuyos. El cálculo es el mismo; el riesgo, no.";
+  pintarPlaca();
+}
+
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; pintar(); }));
+document.getElementById("cabeza").addEventListener("click", deCabeza);
+document.getElementById("codigo").addEventListener("click", conCodigo);
+document.getElementById("reiniciar").addEventListener("click", () => { historial = []; ultimo = null; pintar(); });
+pintar();
+
+</script>
+</body>
+</html>

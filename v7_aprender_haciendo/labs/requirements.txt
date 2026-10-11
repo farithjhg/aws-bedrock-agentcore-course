@@ -1,0 +1,10 @@
+# Kernel de los notebooks. Versiones probadas juntas (octubre 2026):
+# strands-agents >= 1.57 rompe la integración de Memory de bedrock-agentcore 1.22 (ImportError: BidiAfterInvocationEvent).
+# Las dependencias del agente desplegado se fijan con fijar_dependencia() en NovaAssist/app/NovaAgent/pyproject.toml.
+jupyterlab
+boto3
+strands-agents==1.55.1
+strands-agents-tools[agent_core_code_interpreter]==0.8.9
+bedrock-agentcore[strands-agents]==1.22.0
+mcp==1.30.0
+pyiceberg[pyarrow]==0.12.0

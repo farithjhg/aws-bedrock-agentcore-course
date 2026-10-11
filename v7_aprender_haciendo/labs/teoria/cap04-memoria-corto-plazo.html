@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 4: la RAM del agente · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
+
+
+.burbuja.a.olvido { outline: 2px solid var(--bad); }
+.ventana { display: flex; flex-wrap: wrap; gap: 4px; min-height: 2.2rem; }
+.ranura { font-size: 0.75rem; padding: 0.25rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); }
+.ranura.sistema { background: var(--copper-dim); }
+.ranura.actual { background: var(--led); color: var(--board); font-weight: 700; }
+.ranura.herramienta { background: #2d5f7d; }
+.nodo.memoria rect { fill: #173f53; stroke: var(--cloud); }
+.ram rect.celda { fill: #24604a; }
+.ram rect.celda.llena { fill: var(--led); }
+
+</style>
+</head>
+<body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><span class="actual" title="Memoria de trabajo y a corto plazo" aria-current="page">4</span><a class="" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>La RAM del agente</h1>
+  <p class="componente">Componente agéntico: memoria de trabajo y a corto plazo. Capítulo 4.</p>
+  <p class="escena"><strong>Laura:</strong> «Me llamo Laura». Un mensaje después: «¿Cómo me llamo?». El agente no lo sabe, y Laura cierra el chat.</p>
+  <p>Repite la conversación de Laura en tu máquina y con AgentCore. Con AgentCore, elige dónde guarda el código la conversación y apaga la microVM a mitad: mira qué sobrevive, qué llega al modelo en cada mensaje y cuánto cuesta.</p>
+</header>
+
+<section class="laboratorio" aria-label="Simulador de conversación">
+  <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde vive el agente">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
+      </div>
+      <div class="selector" role="group" aria-label="Dónde guarda el código la conversación" id="selector-guarda">
+        <span>La conversación se guarda en:</span>
+        <div class="interruptor conmutador">
+          <button type="button" data-guarda="ram" aria-pressed="true"><span class="luz"></span>la RAM de la microVM</button>
+          <button type="button" data-guarda="memoria" aria-pressed="false"><span class="luz"></span>AgentCore Memory</button>
+        </div>
+      </div>
+    </div>
+    <div class="rejilla">
+      <div class="chat" id="chat" aria-live="polite"><h3>La conversación</h3></div>
+      <div class="lienzo"><svg id="placa" viewBox="0 0 640 330" role="img" aria-label="Recorrido del mensaje"></svg></div>
+    </div>
+    <div class="paneles">
+      <div class="panel"><h3>Lo que recibe el modelo en este mensaje</h3><div class="ventana" id="ventana"></div></div>
+      <div class="panel"><h3>Taxímetro: tokens de entrada por mensaje</h3><div class="taxi" id="taxi"></div><p class="total" id="total"></p></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+    <div class="controles">
+      <button type="button" class="boton primario" id="siguiente">Enviar el siguiente mensaje</button>
+      <button type="button" class="boton secundario" id="apagar">Apagar la microVM (15 min sin uso, un despliegue…)</button>
+      <button type="button" class="boton secundario" id="reiniciar">Empezar de nuevo</button>
+    </div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p><strong>En tu máquina</strong>, el objeto <code>Agent</code> guarda los mensajes en la RAM del proceso, también los resultados de las herramientas. Cada vez que Laura escribe, se reenvía al modelo toda la conversación: por eso recuerda su nombre, y por eso cada mensaje cuesta más que el anterior.</p>
+  <p><strong>Con AgentCore, guardando la conversación en la RAM de la microVM</strong> (un diccionario por sesión), funciona… mientras la microVM vive. Cuando se apaga (15 minutos sin actividad, 8 horas como máximo o un despliegue), se lleva la conversación con ella: el siguiente mensaje de Laura llega a una microVM nueva, vacía. Y Laura no vuelve en 15 minutos: vuelve mañana, o desde la app.</p>
+  <p><strong>Con AgentCore Memory</strong>, la conversación vive <strong>fuera del cómputo</strong>. Cualquier microVM de la sesión, también una nueva, la recupera y la reenvía al modelo. Recuerda otra vez, y el taxímetro vuelve a subir: recordar cuesta.</p>
+
+  <h2>Dos memorias distintas</h2>
+  <p><strong>Memoria de trabajo:</strong> lo que el modelo ve en esta llamada, la ventana de contexto. <strong>Memoria a corto plazo:</strong> el historial de la conversación en curso, que hay que guardar en algún sitio y volver a enviar en cada llamada, porque el modelo no guarda nada entre llamadas. Ese «algún sitio» tiene que durar más que el ordenador que atiende el mensaje.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>La RAM se lee sin coste; la ventana de contexto <strong>se reprocesa entera en cada llamada y se paga cada vez</strong>. De ahí el taxímetro.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>la RAM</strong>. Se puede escribir, pero es volátil: dura lo que dure la máquina. En el capítulo 5 llegará el disco duro: lo que Laura cuenta hoy y debería recordarse mañana.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿dónde tiene que vivir la conversación para que sobreviva a la microVM que la atendió?</p>
+  <a class="volver" href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/04_memoria_corto_plazo.ipynb" data-nb="04_memoria_corto_plazo">Volver al capítulo 4 y crear la memoria</a>
+  <p class="enlaces">▶ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/04_memoria_corto_plazo.ipynb" target="_blank" rel="noopener">Abrir el capítulo 4 en Colab</a>
+    · 🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap04" target="_blank" rel="noopener">Ver la escena en la presentación</a>
+    · 🗺️ <a href="index.html">El mapa del agente</a></p>
+  <p class="pie">Los tokens del simulador son una estimación didáctica (unos 4 caracteres por token, más el prompt de sistema). En el laboratorio verás los valores reales en la línea 🚕 y la microVM real en la línea 🖥️.</p>
+</main>
+
+<script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
+
+const GUION = [
+  { u: "Hola, me llamo Laura.", rec: "¡Hola, Laura! Soy Nova Assist, un asistente de IA. ¿En qué te ayudo?", olv: "¡Hola! Soy Nova Assist, un asistente de IA. ¿En qué te ayudo?" },
+  { u: "¿Dónde está mi pedido TN-1001?", rec: "Va en camino con EnvíosRápidos y llega en dos días.", olv: "Va en camino con EnvíosRápidos y llega en dos días.", herramienta: true },
+  { u: "¿Cómo me llamo?", rec: "Te llamas Laura.", olv: "No lo sé: en esta conversación no me lo has dicho.", clave: true },
+  { u: "Perfecto, gracias.", rec: "¡A ti, Laura! Que disfrutes los auriculares.", olv: "De nada. ¿Puedo ayudarte en algo más?" },
+];
+const SISTEMA = 350, HERRAMIENTA = 140;
+const tok = t => Math.ceil(t.length / 4) + 4;
+const nuevoId = () => Math.random().toString(16).slice(2, 8);
+let modo = "local", guarda = "ram", turno = 0, historial = [], vmRam = [], memoria = [], costes = [], ultimo = null, vm = { viva: false, id: "" }, avisos = [];
+
+function reiniciar() { turno = 0; historial = []; vmRam = []; memoria = []; costes = []; ultimo = null; vm = { viva: false, id: "" }; avisos = []; pintar(); }
+
+function enviar() {
+  if (turno >= GUION.length) return;
+  const paso = GUION[turno];
+  let nueva = false;
+  if (modo === "internet" && !vm.viva) { vm = { viva: true, id: nuevoId() }; vmRam = []; nueva = true; }
+  const previo = modo === "local" ? historial : (guarda === "memoria" ? memoria : vmRam);
+  const recuerda = previo.some(m => m.rol === "u" && m.texto.includes("Laura"));
+  const respuesta = recuerda ? paso.rec : paso.olv;
+  const ventana = [{ t: "Sistema", k: "sistema", n: SISTEMA }, ...previo.map(m => (m.rol === "h" ? { t: "Herramienta", k: "herramienta", n: HERRAMIENTA } : { t: m.rol === "u" ? "Laura" : "Nova", k: "", n: tok(m.texto) })),
+                   { t: "Mensaje actual", k: "actual", n: tok(paso.u) }];
+  if (paso.herramienta) ventana.push({ t: "Resultado de herramienta", k: "herramienta", n: HERRAMIENTA });
+  const entrada = ventana.reduce((s, v) => s + v.n, 0);
+  const nuevos = [{ rol: "u", texto: paso.u }, ...(paso.herramienta ? [{ rol: "h", texto: "" }] : []), { rol: "a", texto: respuesta, olvido: paso.clave && !recuerda }];
+  if (modo === "local") historial = historial.concat(nuevos);
+  else if (guarda === "memoria") memoria = memoria.concat(nuevos);
+  else vmRam = vmRam.concat(nuevos);
+  avisos.push(...nuevos.filter(m => m.rol !== "h"));
+  costes.push(entrada);
+  ultimo = { paso, respuesta, ventana, entrada, nueva, olvido: paso.clave && !recuerda };
+  turno++;
+  pintar();
+}
+
+function apagar() {
+  if (modo !== "internet" || !vm.viva) return;
+  avisos.push({ rol: "s", texto: `⏹️ La microVM ${vm.id} se apaga${guarda === "ram" ? " y se lleva la conversación que guardaba en su RAM" : ""}.` });
+  vm = { viva: false, id: "" }; vmRam = [];
+  pintar();
+}
+
+function nodo(x, y, w, h, titulo, sub, clases = "") {
+  return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
+    <text x="${x + 12}" y="${y + 24}">${titulo}</text>${sub ? `<text class="sub" x="${x + 12}" y="${y + 42}">${sub}</text>` : ""}</g>`;
+}
+function ram(x, y, llenas, total = 8) {
+  let s = `<g class="ram">`;
+  for (let i = 0; i < total; i++) s += `<rect class="celda ${i < llenas ? "llena" : ""}" x="${x + i * 13}" y="${y}" width="10" height="8" rx="2"></rect>`;
+  return s + "</g>";
+}
+function ruta(d, activa) { return `<path class="ruta ${activa ? "activa" : ""}" d="${d}"></path>`; }
+
+function pintarPlaca() {
+  let s = nodo(14, 136, 112, 56, "Laura", "navegador");
+  s += nodo(510, 136, 116, 56, "Modelo", "Bedrock", ultimo ? "activo" : "");
+  if (modo === "local") {
+    s += ruta("M126 164 H250", !!ultimo) + ruta("M410 164 H510", !!ultimo);
+    s += nodo(250, 120, 160, 88, "Tu portátil", "un proceso, su RAM", ultimo ? "activo" : "");
+    s += ram(262, 186, Math.min(historial.length, 8));
+  } else {
+    s += nodo(150, 30, 300, 270, "AgentCore Runtime", "la sesión de Laura", "nube");
+    s += ruta("M126 164 H185", vm.viva) + ruta("M415 150 C470 150 470 164 510 164", vm.viva);
+    s += nodo(185, 110, 230, 80, vm.viva ? `microVM ${vm.id}` : "microVM apagada", vm.viva ? (guarda === "ram" ? "RAM: la conversación" : "RAM: solo esta invocación") : "se enciende con el siguiente mensaje", vm.viva ? "activo" : "apagado");
+    if (vm.viva) s += ram(197, 172, guarda === "ram" ? Math.min(vmRam.length, 8) : 1);
+    if (guarda === "memoria") {
+      s += ruta("M300 190 V240 H470", vm.viva);
+      s += nodo(470, 220, 156, 64, "AgentCore Memory", `${memoria.length} eventos guardados`, "memoria");
+    }
+  }
+  document.getElementById("placa").innerHTML = s;
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button[data-modo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  document.querySelectorAll(".interruptor button[data-guarda]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.guarda === guarda)));
+  document.getElementById("selector-guarda").style.visibility = modo === "internet" ? "visible" : "hidden";
+  let html = "<h3>La conversación</h3>";
+  for (const m of avisos) html += m.rol === "s" ? `<p class="total">${m.texto}</p>` :
+    `<div class="burbuja ${m.rol}${m.olvido ? " olvido" : ""}"><span class="quien">${m.rol === "u" ? "Laura" : "Nova Assist"}</span>${m.texto}</div>`;
+  document.getElementById("chat").innerHTML = html;
+  document.getElementById("ventana").innerHTML = ultimo
+    ? ultimo.ventana.map(v => `<span class="ranura ${v.k}">${v.t} · ${v.n}</span>`).join("")
+    : `<span class="ranura">Todavía no se ha enviado ningún mensaje</span>`;
+  const max = Math.max(...costes, 600);
+  document.getElementById("taxi").innerHTML = costes.map(c => `<div class="barra" style="height:${Math.round(c / max * 100)}%"><span>${c}</span></div>`).join("")
+    || `<div class="barra" style="height:2%"></div>`;
+  const total = costes.reduce((s, c) => s + c, 0);
+  document.getElementById("total").textContent = costes.length ? `Total de la conversación: ${total} tokens de entrada en ${costes.length} mensajes.` : "";
+  let base = modo === "local"
+    ? "<strong>En tu máquina</strong> hay un solo proceso, y su RAM guarda todo el historial mientras no lo cierres."
+    : (guarda === "ram"
+      ? "<strong>Con AgentCore</strong>, guardando la conversación en la RAM de la microVM: funciona mientras la microVM vive. Prueba a apagarla a mitad."
+      : "<strong>Con AgentCore Memory</strong>, la conversación vive fuera de la microVM: cualquier microVM de la sesión la recupera.");
+  if (ultimo && ultimo.olvido) base = (ultimo.nueva ? "<strong>Ha olvidado a Laura.</strong> Este mensaje llegó a una microVM nueva y la conversación estaba en la RAM de la anterior. " : "<strong>Ha olvidado a Laura.</strong> ") + base;
+  else if (ultimo && ultimo.paso.clave) base = "<strong>Recuerda a Laura.</strong> El primer mensaje viajó otra vez al modelo dentro de la ventana de contexto" + (ultimo.nueva ? ", aunque la microVM es nueva: venía de Memory. " : ". ") + base;
+  document.getElementById("leyenda").innerHTML = base;
+  const sig = document.getElementById("siguiente");
+  sig.disabled = turno >= GUION.length;
+  sig.textContent = turno >= GUION.length ? "Conversación terminada: prueba otra opción" : `Enviar: «${GUION[turno].u}»`;
+  document.getElementById("apagar").disabled = !(modo === "internet" && vm.viva);
+  pintarPlaca();
+}
+
+document.querySelectorAll(".interruptor button[data-modo]").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; reiniciar(); }));
+document.querySelectorAll(".interruptor button[data-guarda]").forEach(b => b.addEventListener("click", () => { guarda = b.dataset.guarda; reiniciar(); }));
+document.getElementById("siguiente").addEventListener("click", enviar);
+document.getElementById("apagar").addEventListener("click", apagar);
+document.getElementById("reiniciar").addEventListener("click", reiniciar);
+pintar();
+
+</script>
+</body>
+</html>

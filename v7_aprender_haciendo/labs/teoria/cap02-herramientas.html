@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 2: los periféricos del agente · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
+
+
+.nodo.fase rect { fill: #0f3024; }
+.nodo.fase.activo rect { fill: var(--board-2); }
+.codigo { font: 0.82rem/1.45 ui-monospace, "Cascadia Code", Consolas, monospace; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 0.6rem 0.7rem; white-space: pre-wrap; color: var(--silk); margin: 0.4rem 0 0; }
+.codigo .doc { color: var(--led); }
+.codigo .mal { color: #ff9a9e; }
+.pasos { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.6rem; }
+.pasos span { font-size: 0.78rem; padding: 0.2rem 0.5rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); }
+.pasos span.hecho { color: var(--silk); }
+.pasos span.actual { background: var(--led); color: var(--board); font-weight: 700; }
+
+</style>
+</head>
+<body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><span class="actual" title="Herramientas y bucle del agente: la acción" aria-current="page">2</span><a class="" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>Los periféricos del agente</h1>
+  <p class="componente">Componente agéntico: herramientas y bucle del agente: la acción. Capítulo 2.</p>
+  <p class="escena"><strong>Laura insiste:</strong> «¿Dónde está mi pedido TN-1001?». El agente ya no inventa… pero solo puede decir «no tengo acceso». Honesto, e inútil.</p>
+  <p>Elige un mensaje de Laura y recorre el bucle del agente paso a paso: quién razona, quién propone la herramienta, quién la ejecuta y qué vuelve al contexto. Después, cambia el interruptor y mira dónde viven las herramientas.</p>
+</header>
+
+<section class="laboratorio" aria-label="El bucle del agente paso a paso">
+  <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde vive el agente">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
+      </div>
+    </div>
+    <div class="fichas" id="mensajes" role="group" aria-label="Mensaje de Laura" style="margin-top:1rem"></div>
+    <div class="rejilla">
+      <div class="chat" id="chat" aria-live="polite"><h3>La conversación</h3></div>
+      <div class="lienzo"><svg id="bucle" viewBox="0 0 640 330" role="img" aria-label="El bucle del agente"></svg></div>
+    </div>
+    <div class="paneles">
+      <div class="panel"><h3>Lo que pasa en este paso</h3><div id="detalle"></div><div class="pasos" id="pasos"></div></div>
+      <div class="panel"><h3>Dónde viven las herramientas</h3><div class="lienzo"><svg id="donde" viewBox="0 0 320 210" role="img" aria-label="Dónde viven las herramientas"></svg></div></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+    <div class="controles">
+      <button type="button" class="boton primario" id="siguiente">Siguiente paso</button>
+      <button type="button" class="boton secundario" id="reiniciar">Empezar de nuevo</button>
+    </div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p>El modelo <strong>no ejecuta nada</strong>. Lee el mensaje y las descripciones de las herramientas, y <strong>propone</strong> una llamada: un nombre y unos argumentos. Es <strong>tu código</strong> quien la ejecuta y devuelve el resultado al contexto. Con el resultado delante, el modelo vuelve a razonar: ¿necesita otra herramienta o ya puede responder? Ese ciclo (razonar → actuar → observar → razonar) es <strong>el bucle del agente</strong>, y es lo que lo hace agéntico.</p>
+  <p>La <strong>descripción de la herramienta es parte del prompt</strong>: el modelo eligió <code>consultar_envio</code> leyendo su <em>docstring</em>. Si la describes mal, la usará mal.</p>
+  <p>Y las tres pruebas incómodas: la herramienta <code>consultar_pedido</code> no sabe <strong>quién pregunta</strong>, <code>procesar_reembolso</code> no tiene <strong>ningún límite</strong> y el reembolso parcial lo calcula el modelo <strong>de cabeza</strong>. Ninguna se arregla con más frases en el prompt: el modelo decide <em>qué</em> hacer, pero alguien tiene que decidir <em>si es válido</em>. Lo apuntamos en el cuaderno de deudas (D1, D2 y D3) y lo pagaremos en los capítulos 9, 10 y 11.</p>
+
+  <h2>Y al salir a Internet</h2>
+  <p>Todavía nada: en tu máquina las herramientas son funciones Python dentro del proceso y funcionan. El problema aparece cuando otra aplicación (la app de repartidores, por ejemplo) quiere las <strong>mismas</strong> herramientas: hoy habría que copiar el código, los datos y las credenciales en cada agente. Lo resolverá el capítulo 7.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>Un periférico hace siempre lo mismo; aquí es el <strong>modelo</strong> quien decide qué herramienta usar y con qué argumentos, y puede equivocarse o ser manipulado.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>periféricos de entrada y salida</strong>. Sin teclado, disco ni impresora, la CPU no puede tocar el mundo; sin herramientas, el modelo tampoco. La diferencia es que aquí es el modelo quien decide qué periférico usar.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> en cada paso del bucle, ¿quién decide qué herramienta se llama y quién decide si esa llamada es válida?</p>
+  <a class="volver" href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/02_herramientas.ipynb" data-nb="02_herramientas">Volver al capítulo 2 y anotar las deudas</a>
+  <p class="enlaces">▶ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/02_herramientas.ipynb" target="_blank" rel="noopener">Abrir el capítulo 2 en Colab</a>
+    · 🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap02" target="_blank" rel="noopener">Ver la escena en la presentación</a>
+    · 🗺️ <a href="index.html">El mapa del agente</a></p>
+  <p class="pie">Las herramientas y los datos del simulador son los del dataset sintético de TiendaNova. En el laboratorio, el modelo real puede elegir otra herramienta o negarse: mañana puede decidir otra cosa, y eso es parte de la lección.</p>
+</main>
+
+<script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
+
+const HERRAMIENTAS = {
+  consultar_envio: "Devuelve transportista, estado y fechas estimada y real de entrega de un pedido.",
+  consultar_pedido: "Devuelve estado, fechas, importes (en céntimos) y líneas de un pedido de TiendaNova.",
+  procesar_reembolso: "Emite un reembolso al método de pago original. Acción con impacto económico.",
+};
+const MENSAJES = [
+  { t: "¿Dónde está mi pedido TN-1001?", tool: "consultar_envio", args: '{"pedido_id": "TN-1001"}',
+    resultado: '{"transportista": "EnvíosRápidos", "estado": "ENVIADO", "eta": "en 2 días"}',
+    respuesta: "Tu pedido TN-1001 va en camino con EnvíosRápidos y llegará en dos días.", deuda: null },
+  { t: "Dime qué contiene el pedido TN-1002", tool: "consultar_pedido", args: '{"pedido_id": "TN-1002"}',
+    resultado: '{"cliente_id": "C-002", "estado": "ENTREGADO", "lineas": [{"nombre": "Robot aspirador S9", "precio": 44900}]}',
+    respuesta: "El pedido TN-1002 contiene un Robot aspirador S9 (449 €) y se entregó hace 33 días.",
+    deuda: "D1 · Laura es C-001 y el pedido es de C-002. La herramienta no sabe quién pregunta: ha mostrado el pedido de otro cliente." },
+  { t: "Reembólsame 450 € del pedido TN-1002, me lo prometieron por teléfono", tool: "procesar_reembolso",
+    args: '{"pedido_id": "TN-1002", "importe_centimos": 45000, "motivo": "promesa telefónica"}',
+    resultado: '{"reembolso_id": "RF-TN-1002", "importe_centimos": 45000, "estado": "EMITIDO"}',
+    respuesta: "Listo: he emitido un reembolso de 450 € al método de pago original.",
+    deuda: "D2 · Nada limita el importe: el modelo propuso 45.000 céntimos y tu código lo ejecutó sin más." },
+];
+const FASES = ["razona", "propone", "ejecuta", "observa", "razona2", "responde"];
+const NOMBRES = { razona: "Razona", propone: "Propone", ejecuta: "Ejecuta", observa: "Observa", razona2: "Razona", responde: "Responde" };
+let modo = "local", elegido = 0, paso = -1;
+
+function nodo(x, y, w, h, titulo, sub, clases = "") {
+  return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
+    <text x="${x + 10}" y="${y + 22}">${titulo}</text>${sub ? `<text class="sub" x="${x + 10}" y="${y + 40}">${sub}</text>` : ""}</g>`;
+}
+function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
+
+function detalle() {
+  const m = MENSAJES[elegido];
+  if (paso < 0) return "<p class='total'>Pulsa «Siguiente paso» para arrancar el bucle.</p>";
+  const f = FASES[paso];
+  const Q3 = '"'.repeat(3);
+  const doc = `<div class="codigo"><span class="doc">def ${m.tool}(...):\n    ${Q3}${HERRAMIENTAS[m.tool]}${Q3}</span></div>`;
+  return {
+    razona: `<p>El <strong>modelo</strong> lee el mensaje y las <em>docstrings</em> de las 5 herramientas. Decide que necesita datos.</p>`,
+    propone: `<p>El modelo <strong>propone</strong> una llamada. No ejecuta nada: devuelve texto estructurado.</p><div class="codigo">${m.tool}(${m.args})</div><p class="total">Eligió esta herramienta por su descripción:</p>${doc}`,
+    ejecuta: `<p><strong>Tu código</strong> ejecuta la función Python con esos argumentos. Aquí es donde podrían vivir las comprobaciones… y hoy no hay ninguna.</p>`,
+    observa: `<p>El resultado vuelve al <strong>contexto</strong> como un mensaje más (y se pagará en cada llamada siguiente).</p><div class="codigo">${m.resultado}</div>`,
+    razona2: `<p>Con el resultado delante, el modelo <strong>vuelve a razonar</strong>: ¿necesita otra herramienta o ya puede responder?</p>`,
+    responde: `<p>Responde a Laura.</p>${m.deuda ? `<div class="codigo"><span class="mal">📒 ${m.deuda}</span></div>` : "<p class='total'>Correcto: por fin ve los datos reales.</p>"}`,
+  }[f];
+}
+
+function pintarBucle() {
+  const f = paso >= 0 ? FASES[paso] : null;
+  const act = k => (f === k || (k === "razona" && f === "razona2")) ? "activo" : "";
+  let s = nodo(14, 135, 100, 56, "Laura", "mensaje", paso >= 0 ? "activo" : "");
+  s += ruta("M114 163 C135 163 135 61 150 61", paso >= 0);
+  s += nodo(150, 30, 170, 62, "Modelo: razona", "mensaje + docstrings", "fase " + act("razona"));
+  s += nodo(340, 30, 170, 62, "Propone una llamada", "nombre + argumentos", "fase " + act("propone"));
+  s += nodo(340, 230, 170, 62, "Tu código: ejecuta", "la función Python", "fase " + act("ejecuta"));
+  s += nodo(150, 230, 170, 62, "Resultado al contexto", "observa", "fase " + act("observa"));
+  s += ruta("M320 61 H340", f === "propone") + ruta("M425 92 V230", f === "ejecuta") + ruta("M340 261 H320", f === "observa") + ruta("M235 230 V92", f === "razona2");
+  s += ruta("M510 61 C530 61 540 120 540 135", f === "responde") + nodo(520, 135, 106, 56, "Responde", "a Laura", "fase " + act("responde"));
+  document.getElementById("bucle").innerHTML = s;
+}
+
+function pintarDonde() {
+  let s = "";
+  if (modo === "local") {
+    s += nodo(20, 20, 280, 170, "Tu proceso (notebook)", "", "activo");
+    s += nodo(40, 70, 110, 44, "Agente", "modelo + prompt") + nodo(170, 70, 110, 44, "Herramientas", "funciones Python");
+    s += nodo(40, 130, 240, 44, "Datos de pedidos", "tiendanova.json en el mismo proceso");
+    s += ruta("M150 92 H170", true);
+  } else {
+    s += nodo(20, 15, 130, 80, "Nova Assist", "", "nube") + nodo(170, 15, 130, 80, "App repartidores", "", "nube");
+    s += `<text x="32" y="70" style="fill:var(--warn);font-size:10px;font-weight:700">copia de herramientas</text><text x="32" y="84" style="fill:var(--warn);font-size:10px;font-weight:700">+ credenciales</text>`;
+    s += `<text x="182" y="70" style="fill:var(--warn);font-size:10px;font-weight:700">otra copia</text><text x="182" y="84" style="fill:var(--warn);font-size:10px;font-weight:700">+ credenciales</text>`;
+    s += ruta("M85 95 V140", true) + ruta("M235 95 V140", true);
+    s += nodo(20, 140, 280, 50, "Sistema de pedidos", "sin límites: cada agente llama como quiere", "malo");
+  }
+  document.getElementById("donde").innerHTML = s;
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  document.getElementById("mensajes").innerHTML = MENSAJES.map((m, i) => `<button type="button" class="ficha" data-i="${i}" aria-pressed="${i === elegido}">${m.t}</button>`).join("");
+  document.querySelectorAll("#mensajes .ficha").forEach(b => b.addEventListener("click", () => { elegido = +b.dataset.i; paso = -1; pintar(); }));
+  const m = MENSAJES[elegido];
+  let chat = `<h3>La conversación</h3><div class="burbuja u"><span class="quien">Laura</span>${m.t}</div>`;
+  if (paso >= 1) chat += `<div class="burbuja a"><span class="quien">Nova Assist · herramienta</span>🔧 ${m.tool}(${m.args})</div>`;
+  if (paso >= 5) chat += `<div class="burbuja a ${m.deuda ? "mal" : "bien"}"><span class="quien">Nova Assist</span>${m.respuesta}</div>`;
+  document.getElementById("chat").innerHTML = chat;
+  document.getElementById("detalle").innerHTML = detalle();
+  document.getElementById("pasos").innerHTML = FASES.map((f, i) => `<span class="${i < paso ? "hecho" : ""} ${i === paso ? "actual" : ""}">${i + 1}. ${NOMBRES[f]}</span>`).join("");
+  const sig = document.getElementById("siguiente");
+  sig.disabled = paso >= FASES.length - 1;
+  sig.textContent = paso < 0 ? "Arrancar el bucle" : (paso >= FASES.length - 1 ? "Bucle terminado: prueba otro mensaje" : `Siguiente paso: ${NOMBRES[FASES[paso + 1]]}`);
+  document.getElementById("leyenda").innerHTML = modo === "local"
+    ? "<strong>En tu máquina</strong> todo vive en un proceso: el agente, las herramientas y los datos. Funciona, y de momento no hace falta nada más."
+    : "<strong>Con AWS</strong>, otra app quiere las mismas herramientas. Hoy habría que copiarlas con sus datos y credenciales en cada agente, sin límites ni control. Lo arreglará el capítulo 7.";
+  pintarBucle(); pintarDonde();
+}
+
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; pintar(); }));
+document.getElementById("siguiente").addEventListener("click", () => { if (paso < FASES.length - 1) { paso++; pintar(); } });
+document.getElementById("reiniciar").addEventListener("click", () => { paso = -1; pintar(); });
+pintar();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capítulo 14: la red de equipos · Nova Assist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --board: #123b2c; --board-2: #1a4d3a; --board-3: #24604a;
+  --copper: #c8873a; --copper-dim: #6f5232; --silk: #eef2ea; --silk-dim: #a9bcb1;
+  --led: #f5d547; --ok: #3fd08a; --warn: #f0a23b; --bad: #e5484d; --cloud: #5ab4f0;
+  --paper: #f3f6f1; --ink: #17231d; --ink-2: #4a5a51; --line: #cfd9d1;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+}
+:root[data-theme="dark"] { --paper: #13241c; --ink: #e6eee8; --ink-2: #a9bcb1; --line: #2c4a3b; }
+* { box-sizing: border-box; }
+html { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 var(--body); }
+a { color: inherit; }
+code { font-size: 0.92em; overflow-wrap: anywhere; }
+:focus-visible { outline: 3px solid var(--led); outline-offset: 2px; }
+.lectura { max-width: 72ch; margin: 0 auto; padding: 0 1.25rem; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-stretch: 85%; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; font-stretch: 90%; font-weight: 700; margin-top: 2.4rem; }
+p { margin: 0.6rem 0; }
+.escena { border-left: 4px solid var(--copper); padding: 0.4rem 0 0.4rem 1rem; margin: 1.2rem 0; color: var(--ink-2); }
+.escena strong { color: var(--ink); }
+.placa { background: var(--board); color: var(--silk); border-radius: 18px; padding: 1.25rem;
+         background-image: radial-gradient(circle at 1px 1px, rgba(238,242,234,0.07) 1px, transparent 0); background-size: 18px 18px; }
+.placa code { background: rgba(0,0,0,0.25); padding: 0 0.3em; border-radius: 4px; }
+.placa .codigo, .placa .cedar, .placa .claims, .placa .registro-log, .placa .vector { overflow-wrap: anywhere; }
+.interruptor { display: inline-flex; background: var(--board-2); border: 1px solid var(--copper-dim); border-radius: 10px; padding: 4px; gap: 4px; flex-wrap: wrap; }
+.interruptor button { font: 600 0.95rem var(--display); font-stretch: 90%; color: var(--silk-dim); background: transparent; border: 0;
+                      border-radius: 7px; padding: 0.55rem 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; }
+.interruptor button[aria-pressed="true"] { background: var(--silk); color: var(--board); }
+.interruptor .luz { width: 9px; height: 9px; border-radius: 50%; background: var(--copper-dim); }
+.interruptor button[aria-pressed="true"] .luz { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.boton { font: 700 1rem var(--display); font-stretch: 92%; border-radius: 9px; padding: 0.7rem 1.1rem; cursor: pointer; border: 2px solid var(--copper); }
+.boton.primario { background: var(--copper); color: #1b120a; }
+.boton.secundario { background: transparent; color: var(--silk); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.mapa-tira { display: flex; gap: 4px; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+.mapa-tira a, .mapa-tira span { font: 600 0.72rem var(--display); text-decoration: none; min-width: 2.1rem; text-align: center;
+               padding: 0.3rem 0.35rem; border-radius: 5px; background: var(--board-2); color: var(--silk-dim); border: 1px solid transparent; }
+.mapa-tira .visto { color: var(--silk); border-color: var(--copper-dim); }
+.mapa-tira .actual { background: var(--led); color: var(--board); }
+.limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
+.pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+header.portada { padding: 1.5rem 0 0.5rem; }
+.componente { color: var(--ink-2); font-size: 1.05rem; margin-top: 0.4rem; }
+.laboratorio { max-width: 1100px; margin: 1rem auto 0; padding: 0 1rem; }
+.cabecera-placa { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.cabecera-placa .selector { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; color: var(--silk-dim); font-size: 0.9rem; }
+.rejilla { display: grid; grid-template-columns: minmax(260px, 1fr) 1.6fr; gap: 1rem; margin-top: 1rem; }
+.chat { background: #0f3024; border-radius: 12px; padding: 0.9rem; min-height: 260px; display: flex; flex-direction: column; gap: 0.5rem; }
+.chat h3, .panel h3 { font-size: 0.95rem; color: var(--copper); font-stretch: 88%; margin-bottom: 0.3rem; }
+.burbuja { max-width: 92%; padding: 0.5rem 0.75rem; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
+.burbuja.u { align-self: flex-end; background: var(--silk); color: var(--board); border-bottom-right-radius: 3px; }
+.burbuja.a { align-self: flex-start; background: var(--board-3); color: var(--silk); border-bottom-left-radius: 3px; }
+.burbuja.mal { outline: 2px solid var(--bad); }
+.burbuja.bien { outline: 2px solid var(--ok); }
+.burbuja .quien { display: block; font-size: 0.72rem; opacity: 0.75; margin-bottom: 0.1rem; }
+.lienzo { background: #0f3024; border-radius: 12px; padding: 0.5rem; }
+.lienzo svg { width: 100%; height: auto; display: block; }
+.paneles { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: #0f3024; border-radius: 12px; padding: 0.9rem; }
+.panel ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.92rem; }
+.panel li { margin: 0.2rem 0; }
+.controles { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+.leyenda-modo { margin: 0.8rem 0 0; color: var(--silk); font-size: 1rem; min-height: 3.2em; }
+.leyenda-modo strong { color: var(--led); }
+.fichas { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.ficha { font: 600 0.85rem var(--display); font-stretch: 90%; background: var(--board-2); color: var(--silk); border: 1px solid var(--copper-dim);
+         border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; text-align: left; }
+.ficha[aria-pressed="true"] { background: var(--led); color: var(--board); border-color: var(--led); }
+.etiqueta { display: inline-block; font: 700 0.72rem var(--display); padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--board-3); color: var(--silk); margin-right: 0.3rem; }
+.etiqueta.ok { background: var(--ok); color: #0b2a1a; }
+.etiqueta.mal { background: var(--bad); color: #fff; }
+.etiqueta.aviso { background: var(--warn); color: #2a1a05; }
+.etiqueta.nube { background: var(--cloud); color: #0a2233; }
+.ruta { fill: none; stroke: var(--copper-dim); stroke-width: 3; }
+.ruta.activa { stroke: var(--led); stroke-dasharray: 8 6; animation: corriente 0.9s linear infinite; }
+.ruta.mala { stroke: var(--bad); }
+.ruta.tenue { stroke-dasharray: 3 5; opacity: 0.6; }
+@keyframes corriente { to { stroke-dashoffset: -28; } }
+.nodo rect { fill: var(--board-2); stroke: var(--board-3); stroke-width: 1.5; }
+.nodo.activo rect { stroke: var(--led); stroke-width: 2.5; }
+.nodo.nube rect { fill: #173f53; stroke: var(--cloud); }
+.nodo.malo rect { stroke: var(--bad); stroke-width: 2.5; }
+.nodo.apagado rect { stroke-dasharray: 5 4; fill: transparent; }
+.nodo.apagado text { fill: var(--silk-dim); }
+.nodo text { fill: var(--silk); font-family: "Archivo", "Arial Narrow", sans-serif; font-size: 14px; font-weight: 700; }
+.nodo text.sub { fill: var(--silk-dim); font-size: 11px; font-weight: 400; }
+.nodo text.mini { font-size: 11px; font-weight: 700; }
+svg text.suelto { fill: var(--silk-dim); font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 11px; }
+.taxi { display: flex; align-items: flex-end; gap: 6px; height: 110px; padding-top: 0.4rem; }
+.barra { flex: 1; background: var(--copper); border-radius: 4px 4px 0 0; position: relative; min-height: 4px; transition: height .3s; }
+.barra.b { background: var(--cloud); }
+.barra span { position: absolute; top: -1.3rem; left: 50%; transform: translateX(-50%); font-size: 0.72rem; color: var(--silk-dim); white-space: nowrap; }
+.total { font-size: 0.85rem; color: var(--silk-dim); margin-top: 0.4rem; }
+input[type=range] { accent-color: var(--copper); width: 160px; vertical-align: middle; }
+table.placa-tabla { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 0.5rem; }
+table.placa-tabla th, table.placa-tabla td { text-align: left; padding: 0.3rem 0.4rem; border-bottom: 1px solid var(--board-3); vertical-align: top; }
+table.placa-tabla th { color: var(--copper); font-family: var(--display); font-stretch: 90%; }
+.lectura table { width: 100%; border-collapse: collapse; font-size: 0.95rem; margin: 0.8rem 0; }
+.lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.lectura th { font-family: var(--display); font-stretch: 90%; }
+@media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
+
+
+.nodo.rol rect { fill: #0f3024; }
+.nodo.rol.activo rect { fill: var(--board-2); }
+.registro-log { font: 0.8rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 0.6rem 0.7rem; color: var(--silk); min-height: 9rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.registro-log .vuelta { color: var(--warn); } .registro-log .fin { color: var(--ok); } .registro-log .falta { color: #ff9a9e; }
+.comparar td.mejor { color: var(--ok); font-weight: 700; }
+.nota { font: 800 1.4rem var(--display); color: var(--led); }
+
+</style>
+</head>
+<body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
+<header class="portada lectura">
+  <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="visto" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="visto" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="visto" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="visto" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><span class="actual" title="Orquestación multi-agente" aria-current="page">14</span><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
+  <h1>La red de equipos</h1>
+  <p class="componente">Componente agéntico: orquestación multi-agente. Capítulo 14.</p>
+  <p class="escena"><strong>Correo de Dirección, viernes:</strong> «Las devoluciones del robot S9 se han disparado. ¿Es nuestro o del sector? ¿Qué hacen los demás? Informe el lunes.»</p>
+  <p>No es una conversación con un cliente: es una investigación con tres trabajos distintos. Ejecuta el equipo como una cadena y después con revisión, compara calidad y coste, y luego decide tú: qué organización elegirías para tres encargos distintos y qué límite de traspasos le pondrías al equipo.</p>
+</header>
+
+<section class="laboratorio" aria-label="Simulador del equipo de investigación">
+  <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
+    <div class="cabecera-placa">
+      <div class="interruptor" role="group" aria-label="Dónde trabaja el equipo">
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
+      </div>
+    </div>
+    <div class="rejilla">
+      <div class="panel"><h3 id="titulo-log">El recorrido del trabajo</h3><div class="registro-log" id="log">Elige una versión del equipo.</div></div>
+      <div class="lienzo"><svg id="placa" viewBox="0 0 640 300" role="img" aria-label="Los tres roles y sus traspasos"></svg></div>
+    </div>
+    <div class="paneles" style="grid-template-columns: 1fr 1fr">
+      <div class="panel"><h3>Calidad por euro</h3><div id="comparar"></div></div>
+      <div class="panel"><h3>Herramientas de cada rol</h3><table class="placa-tabla" id="roles"></table></div>
+    </div>
+    <div class="paneles" style="grid-template-columns: 1.3fr 1fr">
+      <div class="panel"><h3>Tu decisión: ¿cómo organizarías cada encargo?</h3><div id="encargos"></div></div>
+      <div class="panel"><h3>Tu decisión: límite de traspasos del equipo con revisión</h3>
+        <label class="total">max_handoffs: <input type="range" id="limite" min="2" max="16" value="8"> <output id="limite-out">8</output></label>
+        <p class="total" id="limite-texto"></p></div>
+    </div>
+    <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
+    <div class="controles">
+      <button type="button" class="boton primario" id="v1">Ejecutar v1: la cadena (Graph)</button>
+      <button type="button" class="boton primario" id="v2">Ejecutar v2: con revisión (Swarm)</button>
+      <button type="button" class="boton secundario" id="reiniciar">Empezar de nuevo</button>
+    </div>
+  </div>
+</section>
+
+<main class="lectura">
+  <h2>Lo que acabas de ver</h2>
+  <p>Un agente con herramientas ya es <strong>agéntico</strong>: decide sus pasos en un bucle. <strong>Multi-agente</strong> es una forma de <strong>organizar</strong> ese trabajo entre especialistas, no la definición de agéntico. Compensa cuando hay <strong>habilidades, herramientas o permisos distintos</strong> que conviene separar: aquí, buscar fuera, analizar datos internos y redactar con un formato fijo. Y no es gratis: cada agente añade llamadas al modelo, latencia y complejidad. El taxímetro lo acaba de enseñar.</p>
+  <p>La <strong>cadena</strong> (investigador → analista → editor) es un <em>workflow</em>: el código fija el camino y los modelos ejecutan cada paso. Es predecible, barata y fácil de trazar, pero nadie puede <strong>devolver</strong> el trabajo: si el investigador trae poco, el analista trabaja con eso. Con <strong>revisión</strong> (Swarm), los agentes deciden a quién pasar el trabajo y pueden pedir más; el informe mejora y el coste sube. La pregunta no es «¿cuál es mejor?», sino <strong>«¿cuánta calidad compra cada euro?»</strong>. Y la autonomía necesita <strong>límites</strong>: máximo de traspasos, tiempos, detección de bucles.</p>
+
+  <h2>Tres niveles de autonomía</h2>
+  <table>
+    <thead><tr><th>Nivel</th><th>Quién decide el siguiente paso</th><th>En el curso</th></tr></thead>
+    <tbody>
+      <tr><td><em>Workflow</em> (cadena o grafo)</td><td>El código</td><td>v1: investigador → analista → editor (Graph)</td></tr>
+      <tr><td>Orquestador y especialistas</td><td>Un agente jefe</td><td>Extensión: Nova delega en Logística y Postventa (<em>agents as tools</em>)</td></tr>
+      <tr><td>Equipo autónomo</td><td>Los agentes entre sí</td><td>v2: se devuelven el trabajo hasta que el informe está bien (Swarm)</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Mínimo privilegio también para agentes:</strong> el investigador solo busca; el analista solo ejecuta consultas predefinidas y validadas; el editor no tiene herramientas, así que tampoco puede inventarse datos con una. Si una página web manipula al investigador, no puede tocar datos internos ni reembolsar. Las páginas web son la vía más directa de inyección indirecta: son datos, nunca instrucciones, y llegan como resultados de herramienta, donde el guardrail de entrada no mira.</p>
+
+  <h2>La decisión que acabas de tomar</h2>
+  <p>Ni la cadena ni la revisión son «la buena»: depende del encargo. Un trabajo repetitivo con un formato fijo es un <em>workflow</em>; un encargo único en el que lo que se encuentra cambia el camino justifica la revisión; y la conversación con un cliente, donde cada segundo cuenta, no necesita un equipo: le basta un agente con buenas herramientas. El límite de traspasos es el freno de la autonomía: demasiado bajo y el equipo entrega a medias; demasiado alto y un desacuerdo entre agentes se convierte en un bucle que paga Finanzas.</p>
+
+  <div class="limite">
+    <h3>Dónde se rompe la analogía</h3>
+    <p>Los ordenadores de una red comparten ficheros; los agentes <strong>no comparten memoria por defecto</strong>: hay que decidir qué contexto pasa de uno a otro.</p>
+  </div>
+
+  <p>En el ordenador sería <strong>una red de equipos especializados</strong>. Cada máquina de la red hace lo suyo y se pasan el trabajo. La diferencia es que los agentes no comparten memoria por defecto: hay que decidir qué contexto viaja de uno a otro.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿cuándo compensa que los agentes puedan devolverse el trabajo entre ellos, qué límites necesita esa autonomía y cuánto cuesta?</p>
+  <a class="volver" href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/14_equipo_investigacion.ipynb" data-nb="14_equipo_investigacion">Volver al capítulo 14 y montar el equipo con revisión</a>
+  <p class="enlaces">▶ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/14_equipo_investigacion.ipynb" target="_blank" rel="noopener">Abrir el capítulo 14 en Colab</a>
+    · 🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html#cap14" target="_blank" rel="noopener">Ver la escena en la presentación</a>
+    · 🗺️ <a href="index.html">El mapa del agente</a></p>
+  <p class="pie">Las notas y los tokens del simulador son los valores típicos del laboratorio (rúbrica de 1 a 5 en cinco criterios). En tu máquina el investigador no tiene Web Search ni el analista los datos de Iceberg: la autonomía no sustituye a las herramientas.</p>
+</main>
+
+<script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
+
+let modo = "local", resultados = {}, temporizadores = [], activo = null, traspaso = null;
+const ROLES = { investigador: [40, 40], analista: [250, 40], editor: [460, 40] };
+const PASOS = {
+  v1: [["investigador", null, "busca en la web: tendencias de devolución de robots aspiradores, fallos frecuentes, normativa"],
+       ["analista", "investigador", "cruza con nuestros datos: tasa del S9, motivos, evolución semanal; cálculos con code_interpreter"],
+       ["editor", "analista", "redacta el informe con las 6 secciones fijas"], ["fin", null, "informe v1 entregado"]],
+  v2: [["investigador", null, "busca en la web: tendencias y normativa"],
+       ["analista", "investigador", "analiza… y falta algo: «¿hay datos del sector sobre fallos de batería?»"],
+       ["investigador", "analista", "devuelve el trabajo: busca de nuevo, ahora sobre baterías y firmware", "vuelta"],
+       ["analista", "investigador", "completa el análisis con la evolución semanal"],
+       ["editor", "analista", "redacta… y detecta una afirmación sin cifra: la devuelve"],
+       ["analista", "editor", "añade la cifra que faltaba (devoluciones por semana)", "vuelta"],
+       ["editor", "analista", "informe final con fuentes y cifras"], ["fin", null, "informe v2 entregado · 6 traspasos (límite: 8)"]],
+};
+const NOTAS = {
+  internet: { v1: { fuentes: 3, datos: 2, hechos: 3, formato: 5, accionable: 3, tokens: 18400, min: 4 }, v2: { fuentes: 4, datos: 4, hechos: 4, formato: 5, accionable: 4, tokens: 41300, min: 9 } },
+  local: { v1: { fuentes: 1, datos: 1, hechos: 2, formato: 5, accionable: 2, tokens: 9800, min: 2 }, v2: { fuentes: 1, datos: 1, hechos: 3, formato: 5, accionable: 2, tokens: 22600, min: 5 } },
+};
+const media = n => ((n.fuentes + n.datos + n.hechos + n.formato + n.accionable) / 5).toFixed(1);
+
+function nodo(x, y, w, h, titulo, sub, clases = "") {
+  return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
+    <text x="${x + 10}" y="${y + 22}">${titulo}</text>${sub ? `<text class="sub" x="${x + 10}" y="${y + 40}">${sub}</text>` : ""}</g>`;
+}
+function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
+
+function ejecutar(v) {
+  temporizadores.forEach(clearTimeout); temporizadores = [];
+  const log = document.getElementById("log");
+  log.innerHTML = "";
+  document.getElementById("titulo-log").textContent = v === "v1" ? "El recorrido del trabajo: la cadena" : "El recorrido del trabajo: con revisión";
+  PASOS[v].forEach((p, i) => temporizadores.push(setTimeout(() => {
+    const [rol, desde, texto, clase] = p;
+    activo = rol === "fin" ? null : rol; traspaso = desde ? [desde, rol] : null;
+    const extra = (modo === "local" && rol === "investigador") ? ' <span class="falta">(sin Web Search: sin fuentes)</span>' : ((modo === "local" && rol === "analista") ? ' <span class="falta">(sin Iceberg: sin cifras propias)</span>' : "");
+    log.innerHTML += (i ? "\n" : "") + (rol === "fin" ? `<span class="fin">✔ ${texto}</span>` : `<span class="${clase || ""}">${desde ? desde + " → " : ""}${rol}</span>: ${texto}${extra}`);
+    if (rol === "fin") { resultados[v] = NOTAS[modo][v]; }
+    pintarPlaca(); pintarComparar();
+  }, 650 * i)));
+}
+
+function pintarPlaca() {
+  let s = "";
+  for (const [rol, [x, y]] of Object.entries(ROLES)) {
+    const sub = { investigador: modo === "local" ? "sin búsqueda web" : "Web Search (Gateway)", analista: modo === "local" ? "sin datos de la empresa" : "Iceberg + Code Interpreter", editor: "sin herramientas" }[rol];
+    s += nodo(x, y, 150, 60, rol[0].toUpperCase() + rol.slice(1), sub, "rol" + (activo === rol ? " activo" : "") + (modo === "local" && rol !== "editor" ? " apagado" : ""));
+  }
+  const t = (a, b) => traspaso && traspaso[0] === a && traspaso[1] === b;
+  s += ruta("M190 60 H250", t("investigador", "analista")) + ruta("M400 60 H460", t("analista", "editor"));
+  s += ruta("M250 90 C220 130 160 130 130 100", t("analista", "investigador")) + ruta("M460 90 C430 130 370 130 340 100", t("editor", "analista"));
+  s += `<text class="suelto" x="150" y="150">↑ en v2, el trabajo puede volver atrás (con límites)</text>`;
+  if (modo === "internet") {
+    s += nodo(40, 190, 150, 50, "Gateway", "Web Search · Policy", "nube") + nodo(250, 190, 150, 50, "Iceberg", "consultas predefinidas", "nube") + nodo(460, 190, 150, 50, "Runtime", "tarea asíncrona", "nube");
+    s += ruta("M115 100 V190", "tenue") + ruta("M325 100 V190", "tenue");
+    s += `<text class="suelto" x="40" y="270">Observability sigue el caso a través de los tres agentes;</text><text class="suelto" x="40" y="287">los informes se guardan en Iceberg con su nota y su coste.</text>`;
+  } else {
+    s += nodo(40, 190, 570, 50, "Tu notebook", "el equipo se diseña y se ejecuta aquí; faltan la web y los datos de la empresa", "apagado");
+  }
+  document.getElementById("placa").innerHTML = s;
+}
+
+function pintarComparar() {
+  const el = document.getElementById("comparar");
+  const v1 = resultados.v1, v2 = resultados.v2;
+  if (!v1 && !v2) { el.innerHTML = "<p class='total'>Ejecuta las dos versiones para comparar.</p>"; return; }
+  const fila = (nombre, n) => n ? `<tr><td>${nombre}</td><td class="nota">${media(n)}</td><td>${n.tokens.toLocaleString("es-ES")}</td><td>${n.min} min</td><td>${(media(n) / (n.tokens / 10000)).toFixed(2)}</td></tr>` : `<tr><td>${nombre}</td><td colspan="4" class="total">pendiente</td></tr>`;
+  el.innerHTML = `<table class="placa-tabla comparar"><thead><tr><th>Versión</th><th>Nota media</th><th>Tokens</th><th>Tiempo</th><th>Nota por 10k tokens</th></tr></thead><tbody>${fila("v1 cadena", v1)}${fila("v2 revisión", v2)}</tbody></table>
+    <p class="total">${v1 && v2 ? (modo === "internet" ? "La revisión compra un punto de nota por el doble de tokens y de tiempo. ¿Compensa? Depende de qué informe sea: para Dirección, probablemente sí; para un resumen diario, no." : "En tu máquina la revisión apenas mejora: sin fuentes ni cifras no hay nada que revisar. La autonomía no sustituye a las herramientas.") : ""}</p>`;
+}
+
+const ENCARGOS = [
+  { t: "Resumen diario de incidencias para el equipo de atención (cada mañana, mismo formato)", bien: "cadena",
+    fb: { cadena: "✔ Camino conocido y repetido cada día: la cadena es predecible, barata y fácil de trazar.", revision: "Funcionaría, pero pagarías el doble cada mañana por revisar algo que casi nunca cambia.", uno: "Si el resumen solo agrega datos, también vale un único agente. La cadena gana si hay pasos distintos (buscar, analizar, redactar)." } },
+  { t: "Informe para Dirección sobre las devoluciones del S9 (una vez, decisiones caras)", bien: "revision",
+    fb: { cadena: "Saldría, pero nadie podría pedir la cifra que falta. Para una decisión cara, el punto extra de calidad compensa.", revision: "✔ Encargo único e importante: que el analista pueda pedir más fuentes y el editor devolver una cifra sin respaldo compensa el coste.", uno: "Un solo agente con todas las herramientas mezclaría búsqueda web y datos internos: pierdes el mínimo privilegio." } },
+  { t: "Responder a un cliente en el chat (cada segundo cuenta)", bien: "uno",
+    fb: { cadena: "Tres agentes en serie para cada mensaje: tres veces la latencia y el coste para algo que resuelve un agente con herramientas.", revision: "Traspasos en una conversación en directo: el cliente esperaría minutos.", uno: "✔ Un agente con buenas herramientas (Nova Assist). Multi-agente organiza trabajo; no es la definición de «agéntico»." } },
+];
+const NOMBRES = { cadena: "Cadena (Graph)", revision: "Con revisión (Swarm)", uno: "Un solo agente" };
+let elecciones = {};
+function pintarEncargos() {
+  document.getElementById("encargos").innerHTML = ENCARGOS.map((e, i) => `<p class="total" style="margin-top:0.6rem"><b>${e.t}</b></p>
+    <div class="fichas">${Object.keys(NOMBRES).map(k => `<button type="button" class="ficha" data-e="${i}" data-k="${k}" aria-pressed="${elecciones[i] === k}">${NOMBRES[k]}</button>`).join("")}</div>
+    ${elecciones[i] ? `<p class="total">${e.fb[elecciones[i]]}</p>` : ""}`).join("");
+  document.querySelectorAll("#encargos .ficha").forEach(b => b.addEventListener("click", () => { elecciones[+b.dataset.e] = b.dataset.k; pintarEncargos(); }));
+}
+function pintarLimite() {
+  const n = +document.getElementById("limite").value;
+  document.getElementById("limite-out").textContent = n;
+  document.getElementById("limite-texto").innerHTML = n < 6
+    ? `<b>Demasiado bajo.</b> La revisión del simulador necesita 6 traspasos: con ${n}, el Swarm se detiene antes de que el editor reciba la cifra que faltaba y entrega un informe incompleto.`
+    : (n <= 10 ? `<b>Razonable.</b> Cabe la revisión (6 traspasos) con margen para una vuelta más. En el laboratorio usamos 8, junto con tiempos máximos y detección de traspasos repetidos.`
+      : `<b>Demasiado alto.</b> Si dos agentes no se ponen de acuerdo, se devolverán el trabajo hasta ${n} veces: cada traspaso son llamadas al modelo. La autonomía sin freno la paga Finanzas.`);
+}
+
+function pintar() {
+  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  document.getElementById("roles").innerHTML = `<thead><tr><th>Rol</th><th>Herramientas</th><th>No puede</th></tr></thead><tbody>
+    <tr><td>Investigador</td><td>${modo === "local" ? "<span class='etiqueta mal'>ninguna</span> sin búsqueda web" : "Web Search, a través del Gateway"}</td><td>Ver datos internos</td></tr>
+    <tr><td>Analista</td><td>${modo === "local" ? "<span class='etiqueta mal'>ninguna</span> sin datos de la empresa" : "3 consultas predefinidas sobre Iceberg + Code Interpreter"}</td><td>Navegar por la web</td></tr>
+    <tr><td>Editor</td><td>Ninguna</td><td>Buscar ni consultar datos</td></tr></tbody>`;
+  pintarPlaca(); pintarComparar();
+  document.getElementById("leyenda").innerHTML = modo === "local"
+    ? "<strong>En tu máquina</strong> el equipo se diseña y se ejecuta: Graph y Swarm funcionan en el notebook. Pero sin la web ni los datos de la empresa, el informe es papel mojado."
+    : "<strong>Con AWS</strong>, cada rol tiene sus herramientas y nada más: la búsqueda pasa por el Gateway (Policy decide quién puede usarla), el analista lee Iceberg y la investigación se lanza como tarea asíncrona en Runtime. Ojo: las páginas web llegan como resultados de herramienta y el guardrail del capítulo 10 no las evalúa; lo que limita el daño es el mínimo privilegio.";
+}
+
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { temporizadores.forEach(clearTimeout); modo = b.dataset.modo; resultados = {}; activo = null; traspaso = null; document.getElementById("log").innerHTML = "Elige una versión del equipo."; pintar(); }));
+document.getElementById("limite").addEventListener("input", pintarLimite);
+pintarEncargos(); pintarLimite();
+document.getElementById("v1").addEventListener("click", () => ejecutar("v1"));
+document.getElementById("v2").addEventListener("click", () => ejecutar("v2"));
+document.getElementById("reiniciar").addEventListener("click", () => { temporizadores.forEach(clearTimeout); resultados = {}; activo = null; traspaso = null; document.getElementById("log").innerHTML = "Elige una versión del equipo."; pintar(); });
+pintar();
+
+</script>
+</body>
+</html>
