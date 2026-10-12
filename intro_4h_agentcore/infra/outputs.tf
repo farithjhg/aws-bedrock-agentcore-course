@@ -3,7 +3,7 @@ output "region" {
 }
 
 output "agent_runtime_arn" {
-  description = "ARN del agente desplegado (lo usa scripts/invocar.py)"
+  description = "ARN del agente desplegado (lo leen scripts/nova.py y la demo)"
   value       = aws_bedrockagentcore_agent_runtime.nova.agent_runtime_arn
 }
 

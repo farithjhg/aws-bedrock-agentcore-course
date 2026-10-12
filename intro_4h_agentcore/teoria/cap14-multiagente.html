@@ -52,7 +52,8 @@ p { margin: 0.6rem 0; }
 .mapa-tira .actual { background: var(--led); color: var(--board); }
 .limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
 .limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
-.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
 .pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -116,6 +117,14 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 .lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .lectura th { font-family: var(--display); font-stretch: 90%; }
 @media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
 
 
 .nodo.rol rect { fill: #0f3024; }
@@ -128,20 +137,22 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 </style>
 </head>
 <body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
 <header class="portada lectura">
   <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="visto" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="visto" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="visto" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="visto" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><span class="actual" title="Orquestación multi-agente" aria-current="page">14</span><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
   <h1>La red de equipos</h1>
   <p class="componente">Componente agéntico: orquestación multi-agente. Capítulo 14.</p>
   <p class="escena"><strong>Correo de Dirección, viernes:</strong> «Las devoluciones del robot S9 se han disparado. ¿Es nuestro o del sector? ¿Qué hacen los demás? Informe el lunes.»</p>
-  <p>No es una conversación con un cliente: es una investigación con tres trabajos distintos. Ejecuta el equipo como una cadena y después con revisión, y compara calidad y coste. El interruptor cambia qué herramientas tiene cada rol.</p>
+  <p>No es una conversación con un cliente: es una investigación con tres trabajos distintos. Ejecuta el equipo como una cadena y después con revisión, compara calidad y coste, y luego decide tú: qué organización elegirías para tres encargos distintos y qué límite de traspasos le pondrías al equipo.</p>
 </header>
 
 <section class="laboratorio" aria-label="Simulador del equipo de investigación">
   <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
     <div class="cabecera-placa">
       <div class="interruptor" role="group" aria-label="Dónde trabaja el equipo">
-        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
-        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
       </div>
     </div>
     <div class="rejilla">
@@ -151,6 +162,12 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
     <div class="paneles" style="grid-template-columns: 1fr 1fr">
       <div class="panel"><h3>Calidad por euro</h3><div id="comparar"></div></div>
       <div class="panel"><h3>Herramientas de cada rol</h3><table class="placa-tabla" id="roles"></table></div>
+    </div>
+    <div class="paneles" style="grid-template-columns: 1.3fr 1fr">
+      <div class="panel"><h3>Tu decisión: ¿cómo organizarías cada encargo?</h3><div id="encargos"></div></div>
+      <div class="panel"><h3>Tu decisión: límite de traspasos del equipo con revisión</h3>
+        <label class="total">max_handoffs: <input type="range" id="limite" min="2" max="16" value="8"> <output id="limite-out">8</output></label>
+        <p class="total" id="limite-texto"></p></div>
     </div>
     <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
     <div class="controles">
@@ -175,7 +192,10 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
       <tr><td>Equipo autónomo</td><td>Los agentes entre sí</td><td>v2: se devuelven el trabajo hasta que el informe está bien (Swarm)</td></tr>
     </tbody>
   </table>
-  <p><strong>Mínimo privilegio también para agentes:</strong> el investigador solo busca; el analista solo ejecuta consultas predefinidas y validadas; el editor no tiene herramientas, así que tampoco puede inventarse datos con una. Si una página web manipula al investigador, no puede tocar datos internos ni reembolsar. Las páginas web son la vía más directa de inyección indirecta: son datos, nunca instrucciones.</p>
+  <p><strong>Mínimo privilegio también para agentes:</strong> el investigador solo busca; el analista solo ejecuta consultas predefinidas y validadas; el editor no tiene herramientas, así que tampoco puede inventarse datos con una. Si una página web manipula al investigador, no puede tocar datos internos ni reembolsar. Las páginas web son la vía más directa de inyección indirecta: son datos, nunca instrucciones, y llegan como resultados de herramienta, donde el guardrail de entrada no mira.</p>
+
+  <h2>La decisión que acabas de tomar</h2>
+  <p>Ni la cadena ni la revisión son «la buena»: depende del encargo. Un trabajo repetitivo con un formato fijo es un <em>workflow</em>; un encargo único en el que lo que se encuentra cambia el camino justifica la revisión; y la conversación con un cliente, donde cada segundo cuenta, no necesita un equipo: le basta un agente con buenas herramientas. El límite de traspasos es el freno de la autonomía: demasiado bajo y el equipo entrega a medias; demasiado alto y un desacuerdo entre agentes se convierte en un bucle que paga Finanzas.</p>
 
   <div class="limite">
     <h3>Dónde se rompe la analogía</h3>
@@ -183,12 +203,32 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
   </div>
 
   <p>En el ordenador sería <strong>una red de equipos especializados</strong>. Cada máquina de la red hace lo suyo y se pasan el trabajo. La diferencia es que los agentes no comparten memoria por defecto: hay que decidir qué contexto viaja de uno a otro.</p>
-  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿cuándo compensa que los agentes puedan devolverse el trabajo entre ellos, qué límites necesita esa autonomía y cuánto cuesta?</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para llevarte:</strong> ¿cuándo compensa que los agentes puedan devolverse el trabajo entre ellos, qué límites necesita esa autonomía y cuánto cuesta?</p>
   <a class="volver" href="index.html">Volver al mapa del agente</a>
-  <p class="pie">Las notas y los tokens del simulador son los valores típicos del laboratorio (rúbrica de 1 a 5 en cinco criterios). En tu máquina el investigador no tiene Web Search ni el analista los datos de Iceberg: la autonomía no sustituye a las herramientas.</p>
+  <p class="enlaces">🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html#catalogo-operacion" target="_blank" rel="noopener">En la presentación: El resto del catálogo</a>
+    · 🛠️ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/14_equipo_investigacion.ipynb" target="_blank" rel="noopener">Constrúyelo tú: capítulo 14 del curso completo</a></p>
+  <p class="pie">Las respuestas del simulador son ejemplos típicos de lo que hacen los modelos actuales. Esta pieza no se construye en el training de 4 horas: en el curso completo tiene su propio capítulo, con laboratorio.</p>
 </main>
 
 <script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a || !a.dataset.nb) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
 
 let modo = "local", resultados = {}, temporizadores = [], activo = null, traspaso = null;
 const ROLES = { investigador: [40, 40], analista: [250, 40], editor: [460, 40] };
@@ -244,7 +284,7 @@ function pintarPlaca() {
   if (modo === "internet") {
     s += nodo(40, 190, 150, 50, "Gateway", "Web Search · Policy", "nube") + nodo(250, 190, 150, 50, "Iceberg", "consultas predefinidas", "nube") + nodo(460, 190, 150, 50, "Runtime", "tarea asíncrona", "nube");
     s += ruta("M115 100 V190", "tenue") + ruta("M325 100 V190", "tenue");
-    s += `<text class="suelto" x="40" y="275">Observability sigue el caso a través de los tres agentes; los informes se guardan en Iceberg con su nota y su coste.</text>`;
+    s += `<text class="suelto" x="40" y="270">Observability sigue el caso a través de los tres agentes;</text><text class="suelto" x="40" y="287">los informes se guardan en Iceberg con su nota y su coste.</text>`;
   } else {
     s += nodo(40, 190, 570, 50, "Tu notebook", "el equipo se diseña y se ejecuta aquí; faltan la web y los datos de la empresa", "apagado");
   }
@@ -260,6 +300,31 @@ function pintarComparar() {
     <p class="total">${v1 && v2 ? (modo === "internet" ? "La revisión compra un punto de nota por el doble de tokens y de tiempo. ¿Compensa? Depende de qué informe sea: para Dirección, probablemente sí; para un resumen diario, no." : "En tu máquina la revisión apenas mejora: sin fuentes ni cifras no hay nada que revisar. La autonomía no sustituye a las herramientas.") : ""}</p>`;
 }
 
+const ENCARGOS = [
+  { t: "Resumen diario de incidencias para el equipo de atención (cada mañana, mismo formato)", bien: "cadena",
+    fb: { cadena: "✔ Camino conocido y repetido cada día: la cadena es predecible, barata y fácil de trazar.", revision: "Funcionaría, pero pagarías el doble cada mañana por revisar algo que casi nunca cambia.", uno: "Si el resumen solo agrega datos, también vale un único agente. La cadena gana si hay pasos distintos (buscar, analizar, redactar)." } },
+  { t: "Informe para Dirección sobre las devoluciones del S9 (una vez, decisiones caras)", bien: "revision",
+    fb: { cadena: "Saldría, pero nadie podría pedir la cifra que falta. Para una decisión cara, el punto extra de calidad compensa.", revision: "✔ Encargo único e importante: que el analista pueda pedir más fuentes y el editor devolver una cifra sin respaldo compensa el coste.", uno: "Un solo agente con todas las herramientas mezclaría búsqueda web y datos internos: pierdes el mínimo privilegio." } },
+  { t: "Responder a un cliente en el chat (cada segundo cuenta)", bien: "uno",
+    fb: { cadena: "Tres agentes en serie para cada mensaje: tres veces la latencia y el coste para algo que resuelve un agente con herramientas.", revision: "Traspasos en una conversación en directo: el cliente esperaría minutos.", uno: "✔ Un agente con buenas herramientas (Nova Assist). Multi-agente organiza trabajo; no es la definición de «agéntico»." } },
+];
+const NOMBRES = { cadena: "Cadena (Graph)", revision: "Con revisión (Swarm)", uno: "Un solo agente" };
+let elecciones = {};
+function pintarEncargos() {
+  document.getElementById("encargos").innerHTML = ENCARGOS.map((e, i) => `<p class="total" style="margin-top:0.6rem"><b>${e.t}</b></p>
+    <div class="fichas">${Object.keys(NOMBRES).map(k => `<button type="button" class="ficha" data-e="${i}" data-k="${k}" aria-pressed="${elecciones[i] === k}">${NOMBRES[k]}</button>`).join("")}</div>
+    ${elecciones[i] ? `<p class="total">${e.fb[elecciones[i]]}</p>` : ""}`).join("");
+  document.querySelectorAll("#encargos .ficha").forEach(b => b.addEventListener("click", () => { elecciones[+b.dataset.e] = b.dataset.k; pintarEncargos(); }));
+}
+function pintarLimite() {
+  const n = +document.getElementById("limite").value;
+  document.getElementById("limite-out").textContent = n;
+  document.getElementById("limite-texto").innerHTML = n < 6
+    ? `<b>Demasiado bajo.</b> La revisión del simulador necesita 6 traspasos: con ${n}, el Swarm se detiene antes de que el editor reciba la cifra que faltaba y entrega un informe incompleto.`
+    : (n <= 10 ? `<b>Razonable.</b> Cabe la revisión (6 traspasos) con margen para una vuelta más. En el laboratorio usamos 8, junto con tiempos máximos y detección de traspasos repetidos.`
+      : `<b>Demasiado alto.</b> Si dos agentes no se ponen de acuerdo, se devolverán el trabajo hasta ${n} veces: cada traspaso son llamadas al modelo. La autonomía sin freno la paga Finanzas.`);
+}
+
 function pintar() {
   document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
   document.getElementById("roles").innerHTML = `<thead><tr><th>Rol</th><th>Herramientas</th><th>No puede</th></tr></thead><tbody>
@@ -269,10 +334,12 @@ function pintar() {
   pintarPlaca(); pintarComparar();
   document.getElementById("leyenda").innerHTML = modo === "local"
     ? "<strong>En tu máquina</strong> el equipo se diseña y se ejecuta: Graph y Swarm funcionan en el notebook. Pero sin la web ni los datos de la empresa, el informe es papel mojado."
-    : "<strong>En Internet</strong> cada rol tiene sus herramientas y nada más: la búsqueda pasa por el Gateway (Policy y Guardrails también la gobiernan), el analista lee Iceberg y la investigación se lanza como tarea asíncrona en Runtime.";
+    : "<strong>Con AWS</strong>, cada rol tiene sus herramientas y nada más: la búsqueda pasa por el Gateway (Policy decide quién puede usarla), el analista lee Iceberg y la investigación se lanza como tarea asíncrona en Runtime. Ojo: las páginas web llegan como resultados de herramienta y el guardrail del capítulo 10 no las evalúa; lo que limita el daño es el mínimo privilegio.";
 }
 
 document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { temporizadores.forEach(clearTimeout); modo = b.dataset.modo; resultados = {}; activo = null; traspaso = null; document.getElementById("log").innerHTML = "Elige una versión del equipo."; pintar(); }));
+document.getElementById("limite").addEventListener("input", pintarLimite);
+pintarEncargos(); pintarLimite();
 document.getElementById("v1").addEventListener("click", () => ejecutar("v1"));
 document.getElementById("v2").addEventListener("click", () => ejecutar("v2"));
 document.getElementById("reiniciar").addEventListener("click", () => { temporizadores.forEach(clearTimeout); resultados = {}; activo = null; traspaso = null; document.getElementById("log").innerHTML = "Elige una versión del equipo."; pintar(); });

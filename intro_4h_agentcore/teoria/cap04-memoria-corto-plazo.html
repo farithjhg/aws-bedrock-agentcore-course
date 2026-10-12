@@ -52,7 +52,8 @@ p { margin: 0.6rem 0; }
 .mapa-tira .actual { background: var(--led); color: var(--board); }
 .limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
 .limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
-.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
 .pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -116,6 +117,14 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 .lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .lectura th { font-family: var(--display); font-stretch: 90%; }
 @media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
 
 
 .burbuja.a.olvido { outline: 2px solid var(--bad); }
@@ -131,21 +140,29 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 </style>
 </head>
 <body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
 <header class="portada lectura">
   <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><span class="actual" title="Memoria de trabajo y a corto plazo" aria-current="page">4</span><a class="" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
   <h1>La RAM del agente</h1>
   <p class="componente">Componente agéntico: memoria de trabajo y a corto plazo. Capítulo 4.</p>
   <p class="escena"><strong>Laura:</strong> «Me llamo Laura». Un mensaje después: «¿Cómo me llamo?». El agente no lo sabe, y Laura cierra el chat.</p>
-  <p>Repite la conversación de Laura en tres sitios distintos y observa dónde vive lo que el agente «recuerda», qué llega al modelo en cada mensaje y cuánto cuesta.</p>
+  <p>Repite la conversación de Laura en tu máquina y con AgentCore. Con AgentCore, elige dónde guarda el código la conversación y apaga la microVM a mitad: mira qué sobrevive, qué llega al modelo en cada mensaje y cuánto cuesta.</p>
 </header>
 
 <section class="laboratorio" aria-label="Simulador de conversación">
   <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
     <div class="cabecera-placa">
       <div class="interruptor" role="group" aria-label="Dónde vive el agente">
-        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
-        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet, sin memoria</button>
-        <button type="button" data-modo="memoria" aria-pressed="false"><span class="luz"></span>En Internet, con Memory</button>
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
+      </div>
+      <div class="selector" role="group" aria-label="Dónde guarda el código la conversación" id="selector-guarda">
+        <span>La conversación se guarda en:</span>
+        <div class="interruptor conmutador">
+          <button type="button" data-guarda="ram" aria-pressed="true"><span class="luz"></span>la RAM de la microVM</button>
+          <button type="button" data-guarda="memoria" aria-pressed="false"><span class="luz"></span>AgentCore Memory</button>
+        </div>
       </div>
     </div>
     <div class="rejilla">
@@ -159,6 +176,7 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
     <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
     <div class="controles">
       <button type="button" class="boton primario" id="siguiente">Enviar el siguiente mensaje</button>
+      <button type="button" class="boton secundario" id="apagar">Apagar la microVM (15 min sin uso, un despliegue…)</button>
       <button type="button" class="boton secundario" id="reiniciar">Empezar de nuevo</button>
     </div>
   </div>
@@ -167,24 +185,45 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 <main class="lectura">
   <h2>Lo que acabas de ver</h2>
   <p><strong>En tu máquina</strong>, el objeto <code>Agent</code> guarda los mensajes en la RAM del proceso, también los resultados de las herramientas. Cada vez que Laura escribe, se reenvía al modelo toda la conversación: por eso recuerda su nombre, y por eso cada mensaje cuesta más que el anterior.</p>
-  <p><strong>En Internet, sin memoria</strong>, nuestro código crea un <code>Agent</code> nuevo en cada invocación, y si la sesión caduca o Laura vuelve por otro canal, empieza otra sesión en otra microVM. El modelo solo recibe el último mensaje. Es más barato… y olvida a Laura.</p>
-  <p><strong>En Internet, con Memory</strong>, la conversación vive en un servicio fuera de la microVM. Cualquier sesión del mismo cliente la recupera y la reenvía al modelo. Recuerda otra vez, y el taxímetro vuelve a subir: recordar cuesta.</p>
+  <p><strong>Con AgentCore, guardando la conversación en la RAM de la microVM</strong> (un diccionario por sesión), funciona… mientras la microVM vive. Cuando se apaga (15 minutos sin actividad, 8 horas como máximo o un despliegue), se lleva la conversación con ella: el siguiente mensaje de Laura llega a una microVM nueva, vacía. Y Laura no vuelve en 15 minutos: vuelve mañana, o desde la app.</p>
+  <p><strong>Con AgentCore Memory</strong>, la conversación vive <strong>fuera del cómputo</strong>. Cualquier microVM de la sesión, también una nueva, la recupera y la reenvía al modelo. Recuerda otra vez, y el taxímetro vuelve a subir: recordar cuesta.</p>
 
   <h2>Dos memorias distintas</h2>
-  <p><strong>Memoria de trabajo:</strong> lo que el modelo ve en esta llamada, la ventana de contexto. <strong>Memoria a corto plazo:</strong> el historial de la conversación en curso, que hay que guardar en algún sitio y volver a enviar en cada llamada, porque el modelo no guarda nada entre llamadas.</p>
+  <p><strong>Memoria de trabajo:</strong> lo que el modelo ve en esta llamada, la ventana de contexto. <strong>Memoria a corto plazo:</strong> el historial de la conversación en curso, que hay que guardar en algún sitio y volver a enviar en cada llamada, porque el modelo no guarda nada entre llamadas. Ese «algún sitio» tiene que durar más que el ordenador que atiende el mensaje.</p>
 
   <div class="limite">
     <h3>Dónde se rompe la analogía</h3>
     <p>La RAM se lee sin coste; la ventana de contexto <strong>se reprocesa entera en cada llamada y se paga cada vez</strong>. De ahí el taxímetro.</p>
   </div>
 
-  <p>En el ordenador sería <strong>la RAM</strong>. Se puede escribir, pero es volátil. En el capítulo 5 llegará el disco duro: lo que Laura cuenta hoy y debería recordarse mañana.</p>
-  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿dónde tiene que vivir la conversación para que cualquier sesión la recuerde?</p>
+  <p>En el ordenador sería <strong>la RAM</strong>. Se puede escribir, pero es volátil: dura lo que dure la máquina. En el capítulo 5 llegará el disco duro: lo que Laura cuenta hoy y debería recordarse mañana.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para llevarte:</strong> ¿dónde tiene que vivir la conversación para que sobreviva a la microVM que la atendió?</p>
   <a class="volver" href="index.html">Volver al mapa del agente</a>
-  <p class="pie">Los tokens del simulador son una estimación didáctica (unos 4 caracteres por token, más el prompt de sistema). En el laboratorio verás los valores reales en la línea 🚕.</p>
+  <p class="enlaces">🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html#sesiones" target="_blank" rel="noopener">En la presentación: Demo 2 · Sale a Internet</a>
+    · 💻 <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/intro_4h_agentcore/demo/demo_intro.ipynb" target="_blank" rel="noopener">La demo, en Colab</a>
+    · 🛠️ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/04_memoria_corto_plazo.ipynb" target="_blank" rel="noopener">Constrúyelo tú: capítulo 4 del curso completo</a></p>
+  <p class="pie">Las respuestas del simulador son ejemplos típicos de lo que hacen los modelos actuales. En la demo del training se ven las reales, que cambian en cada ejecución.</p>
 </main>
 
 <script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a || !a.dataset.nb) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
 
 const GUION = [
   { u: "Hola, me llamo Laura.", rec: "¡Hola, Laura! Soy Nova Assist, un asistente de IA. ¿En qué te ayudo?", olv: "¡Hola! Soy Nova Assist, un asistente de IA. ¿En qué te ayudo?" },
@@ -194,32 +233,38 @@ const GUION = [
 ];
 const SISTEMA = 350, HERRAMIENTA = 140;
 const tok = t => Math.ceil(t.length / 4) + 4;
-const TEXTOS = {
-  local: "En tu máquina hay <strong>un solo proceso</strong>, y su RAM guarda todo el historial. Cada mensaje reenvía la conversación entera al modelo.",
-  internet: "Al desplegar sin estado, cada invocación crea un Agent nuevo, y una sesión nueva (caducada u otro canal) cae en <strong>otra microVM</strong>. El modelo solo ve el último mensaje.",
-  memoria: "La conversación vive en <strong>AgentCore Memory</strong>, fuera de la microVM. La sesión de turno la recupera y la reenvía al modelo.",
-};
-let modo = "local", turno = 0, historial = [], memoria = [], costes = [], ultimo = null;
+const nuevoId = () => Math.random().toString(16).slice(2, 8);
+let modo = "local", guarda = "ram", turno = 0, historial = [], vmRam = [], memoria = [], costes = [], ultimo = null, vm = { viva: false, id: "" }, avisos = [];
 
-function reiniciar() { turno = 0; historial = []; memoria = []; costes = []; ultimo = null; pintar(); }
+function reiniciar() { turno = 0; historial = []; vmRam = []; memoria = []; costes = []; ultimo = null; vm = { viva: false, id: "" }; avisos = []; pintar(); }
 
 function enviar() {
   if (turno >= GUION.length) return;
   const paso = GUION[turno];
-  const recuerda = modo !== "internet";
-  const previo = modo === "local" ? historial : (modo === "memoria" ? memoria : []);
+  let nueva = false;
+  if (modo === "internet" && !vm.viva) { vm = { viva: true, id: nuevoId() }; vmRam = []; nueva = true; }
+  const previo = modo === "local" ? historial : (guarda === "memoria" ? memoria : vmRam);
+  const recuerda = previo.some(m => m.rol === "u" && m.texto.includes("Laura"));
   const respuesta = recuerda ? paso.rec : paso.olv;
   const ventana = [{ t: "Sistema", k: "sistema", n: SISTEMA }, ...previo.map(m => (m.rol === "h" ? { t: "Herramienta", k: "herramienta", n: HERRAMIENTA } : { t: m.rol === "u" ? "Laura" : "Nova", k: "", n: tok(m.texto) })),
                    { t: "Mensaje actual", k: "actual", n: tok(paso.u) }];
   if (paso.herramienta) ventana.push({ t: "Resultado de herramienta", k: "herramienta", n: HERRAMIENTA });
   const entrada = ventana.reduce((s, v) => s + v.n, 0);
-  const replica = modo === "local" ? "proceso" : (turno % 2 === 0 ? "A" : "B");
-  const nuevos = [{ rol: "u", texto: paso.u }, ...(paso.herramienta ? [{ rol: "h", texto: "" }] : []), { rol: "a", texto: respuesta }];
+  const nuevos = [{ rol: "u", texto: paso.u }, ...(paso.herramienta ? [{ rol: "h", texto: "" }] : []), { rol: "a", texto: respuesta, olvido: paso.clave && !recuerda }];
   if (modo === "local") historial = historial.concat(nuevos);
-  if (modo === "memoria") memoria = memoria.concat(nuevos);
+  else if (guarda === "memoria") memoria = memoria.concat(nuevos);
+  else vmRam = vmRam.concat(nuevos);
+  avisos.push(...nuevos.filter(m => m.rol !== "h"));
   costes.push(entrada);
-  ultimo = { paso, respuesta, ventana, entrada, replica, olvido: paso.clave && !recuerda };
+  ultimo = { paso, respuesta, ventana, entrada, nueva, olvido: paso.clave && !recuerda };
   turno++;
+  pintar();
+}
+
+function apagar() {
+  if (modo !== "internet" || !vm.viva) return;
+  avisos.push({ rol: "s", texto: `⏹️ La microVM ${vm.id} se apaga${guarda === "ram" ? " y se lleva la conversación que guardaba en su RAM" : ""}.` });
+  vm = { viva: false, id: "" }; vmRam = [];
   pintar();
 }
 
@@ -235,7 +280,6 @@ function ram(x, y, llenas, total = 8) {
 function ruta(d, activa) { return `<path class="ruta ${activa ? "activa" : ""}" d="${d}"></path>`; }
 
 function pintarPlaca() {
-  const r = ultimo ? ultimo.replica : null;
   let s = nodo(14, 136, 112, 56, "Laura", "navegador");
   s += nodo(510, 136, 116, 56, "Modelo", "Bedrock", ultimo ? "activo" : "");
   if (modo === "local") {
@@ -243,50 +287,53 @@ function pintarPlaca() {
     s += nodo(250, 120, 160, 88, "Tu portátil", "un proceso, su RAM", ultimo ? "activo" : "");
     s += ram(262, 186, Math.min(historial.length, 8));
   } else {
-    s += nodo(150, 140, 88, 48, "Balanceo", "", "");
-    s += ruta("M126 164 H150", !!ultimo);
-    s += ruta("M238 164 C260 164 260 78 290 78", r === "A") + ruta("M238 164 C260 164 260 252 290 252", r === "B");
-    s += ruta("M440 78 C470 78 480 164 510 164", r === "A") + ruta("M440 252 C470 252 480 164 510 164", r === "B");
-    const ramA = r === "A" ? (modo === "memoria" ? Math.min(memoria.length, 8) : 2) : 0;
-    const ramB = r === "B" ? (modo === "memoria" ? Math.min(memoria.length, 8) : 2) : 0;
-    s += nodo(290, 46, 150, 66, "Sesión A · web", "Agent nuevo, RAM vacía", r === "A" ? "activo" : "") + ram(302, 96, ramA);
-    s += nodo(290, 220, 150, 66, "Sesión B · WhatsApp", "Agent nuevo, RAM vacía", r === "B" ? "activo" : "") + ram(302, 270, ramB);
-    if (modo === "memoria") {
-      s += ruta("M365 112 V150 H470 V246", r === "A") + ruta("M440 268 H470 V246", r === "B");
-      s += nodo(470, 230, 156, 64, "AgentCore Memory", `${memoria.length} eventos guardados`, "memoria");
+    s += nodo(150, 30, 300, 270, "AgentCore Runtime", "la sesión de Laura", "nube");
+    s += ruta("M126 164 H185", vm.viva) + ruta("M415 150 C470 150 470 164 510 164", vm.viva);
+    s += nodo(185, 110, 230, 80, vm.viva ? `microVM ${vm.id}` : "microVM apagada", vm.viva ? (guarda === "ram" ? "RAM: la conversación" : "RAM: solo esta invocación") : "se enciende con el siguiente mensaje", vm.viva ? "activo" : "apagado");
+    if (vm.viva) s += ram(197, 172, guarda === "ram" ? Math.min(vmRam.length, 8) : 1);
+    if (guarda === "memoria") {
+      s += ruta("M300 190 V240 H470", vm.viva);
+      s += nodo(470, 220, 156, 64, "AgentCore Memory", `${memoria.length} eventos guardados`, "memoria");
     }
   }
   document.getElementById("placa").innerHTML = s;
 }
 
 function pintar() {
-  document.querySelectorAll(".interruptor button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
-  const chat = document.getElementById("chat");
-  const mensajes = modo === "local" ? historial : (modo === "memoria" ? memoria : []);
+  document.querySelectorAll(".interruptor button[data-modo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo)));
+  document.querySelectorAll(".interruptor button[data-guarda]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.guarda === guarda)));
+  document.getElementById("selector-guarda").style.visibility = modo === "internet" ? "visible" : "hidden";
   let html = "<h3>La conversación</h3>";
-  const vistos = modo === "internet" ? GUION.slice(0, turno).flatMap(p => [{ rol: "u", texto: p.u }, { rol: "a", texto: p.olv, olvido: p.clave }]) : mensajes;
-  for (const m of vistos.filter(x => x.rol !== "h")) html += `<div class="burbuja ${m.rol}${m.olvido ? " olvido" : ""}"><span class="quien">${m.rol === "u" ? "Laura" : "Nova Assist"}</span>${m.texto}</div>`;
-  chat.innerHTML = html;
+  for (const m of avisos) html += m.rol === "s" ? `<p class="total">${m.texto}</p>` :
+    `<div class="burbuja ${m.rol}${m.olvido ? " olvido" : ""}"><span class="quien">${m.rol === "u" ? "Laura" : "Nova Assist"}</span>${m.texto}</div>`;
+  document.getElementById("chat").innerHTML = html;
   document.getElementById("ventana").innerHTML = ultimo
     ? ultimo.ventana.map(v => `<span class="ranura ${v.k}">${v.t} · ${v.n}</span>`).join("")
     : `<span class="ranura">Todavía no se ha enviado ningún mensaje</span>`;
   const max = Math.max(...costes, 600);
-  document.getElementById("taxi").innerHTML = costes.map((c, i) => `<div class="barra" style="height:${Math.round(c / max * 100)}%"><span>${c}</span></div>`).join("")
+  document.getElementById("taxi").innerHTML = costes.map(c => `<div class="barra" style="height:${Math.round(c / max * 100)}%"><span>${c}</span></div>`).join("")
     || `<div class="barra" style="height:2%"></div>`;
   const total = costes.reduce((s, c) => s + c, 0);
   document.getElementById("total").textContent = costes.length ? `Total de la conversación: ${total} tokens de entrada en ${costes.length} mensajes.` : "";
-  let leyenda = TEXTOS[modo];
-  if (ultimo && ultimo.olvido) leyenda = "<strong>Ha olvidado a Laura.</strong> Este Agent empezó con la RAM vacía y el modelo no recibió el primer mensaje. " + TEXTOS[modo];
-  else if (ultimo && ultimo.paso.clave) leyenda = "<strong>Recuerda a Laura.</strong> El primer mensaje viajó otra vez al modelo dentro de la ventana de contexto. " + TEXTOS[modo];
-  document.getElementById("leyenda").innerHTML = leyenda;
+  let base = modo === "local"
+    ? "<strong>En tu máquina</strong> hay un solo proceso, y su RAM guarda todo el historial mientras no lo cierres."
+    : (guarda === "ram"
+      ? "<strong>Con AgentCore</strong>, guardando la conversación en la RAM de la microVM: funciona mientras la microVM vive. Prueba a apagarla a mitad."
+      : "<strong>Con AgentCore Memory</strong>, la conversación vive fuera de la microVM: cualquier microVM de la sesión la recupera.");
+  if (ultimo && ultimo.olvido) base = (ultimo.nueva ? "<strong>Ha olvidado a Laura.</strong> Este mensaje llegó a una microVM nueva y la conversación estaba en la RAM de la anterior. " : "<strong>Ha olvidado a Laura.</strong> ") + base;
+  else if (ultimo && ultimo.paso.clave) base = "<strong>Recuerda a Laura.</strong> El primer mensaje viajó otra vez al modelo dentro de la ventana de contexto" + (ultimo.nueva ? ", aunque la microVM es nueva: venía de Memory. " : ". ") + base;
+  document.getElementById("leyenda").innerHTML = base;
   const sig = document.getElementById("siguiente");
   sig.disabled = turno >= GUION.length;
-  sig.textContent = turno >= GUION.length ? "Conversación terminada: prueba otro modo" : `Enviar: «${GUION[turno].u}»`;
+  sig.textContent = turno >= GUION.length ? "Conversación terminada: prueba otra opción" : `Enviar: «${GUION[turno].u}»`;
+  document.getElementById("apagar").disabled = !(modo === "internet" && vm.viva);
   pintarPlaca();
 }
 
-document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; reiniciar(); }));
+document.querySelectorAll(".interruptor button[data-modo]").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; reiniciar(); }));
+document.querySelectorAll(".interruptor button[data-guarda]").forEach(b => b.addEventListener("click", () => { guarda = b.dataset.guarda; reiniciar(); }));
 document.getElementById("siguiente").addEventListener("click", enviar);
+document.getElementById("apagar").addEventListener("click", apagar);
 document.getElementById("reiniciar").addEventListener("click", reiniciar);
 pintar();
 

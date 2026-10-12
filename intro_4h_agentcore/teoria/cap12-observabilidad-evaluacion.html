@@ -52,7 +52,8 @@ p { margin: 0.6rem 0; }
 .mapa-tira .actual { background: var(--led); color: var(--board); }
 .limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
 .limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
-.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
 .pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -116,6 +117,14 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 .lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .lectura th { font-family: var(--display); font-stretch: 90%; }
 @media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
 
 
 .gantt rect.span { fill: var(--board-3); stroke: var(--copper-dim); cursor: pointer; }
@@ -137,28 +146,31 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 </style>
 </head>
 <body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
 <header class="portada lectura">
   <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="visto" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="visto" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><span class="actual" title="Observabilidad y evaluación" aria-current="page">12</span><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
   <h1>El visor de eventos y los exámenes</h1>
   <p class="componente">Componente agéntico: observabilidad y evaluación. Capítulo 12.</p>
   <p class="escena"><strong>Comité de dirección.</strong> «¿Qué tal funciona Nova Assist?». Respuesta: «Bien, creo». Silencio.</p>
-  <p>Es la conversación del molinillo con cupón. Mira qué puedes reconstruir de ella con logs sueltos y qué con una traza completa; después pasa el examen con un juez y decide qué parte del tráfico evaluar.</p>
+  <p>Es la conversación del molinillo con cupón. Mira qué puedes reconstruir con logs sueltos y qué con una traza completa. Con la traza, toma dos decisiones: qué tramo atacarías primero para bajar la latencia y qué parte del tráfico evaluar sin disparar la factura.</p>
 </header>
 
 <section class="laboratorio" aria-label="Visor de trazas y evaluación">
   <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
     <div class="cabecera-placa">
       <div class="interruptor" role="group" aria-label="Dónde vive el agente">
-        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
-        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
       </div>
     </div>
     <div class="rejilla" style="grid-template-columns: 1.7fr 1fr">
       <div class="panel"><h3 id="titulo-traza">Una conversación por dentro</h3><div id="traza"></div></div>
-      <div class="panel"><h3>Detalle del paso</h3><div id="detalle" class="total">Pulsa un tramo de la traza.</div></div>
+      <div class="panel"><h3>Detalle del paso</h3><div id="detalle" class="total">Pulsa un tramo de la traza.</div>
+        <h3 style="margin-top:0.8rem">Decisión 1</h3><p class="total" id="reto-latencia"></p></div>
     </div>
     <div class="paneles" style="grid-template-columns: 1fr 1fr">
-      <div class="panel"><h3 id="titulo-examen">El examen: un juez con rúbrica</h3><div id="examen"></div><div class="mandos" id="mandos" hidden><label>Tráfico evaluado online: <input type="range" id="muestreo" min="0" max="100" step="5" value="10"> <output id="muestreo-out">10 %</output></label><p class="total" id="muestreo-texto"></p></div></div>
+      <div class="panel"><h3 id="titulo-examen">El examen: un juez con rúbrica</h3><div id="examen"></div><div class="mandos" id="mandos" hidden><h3 style="margin-top:0.8rem">Decisión 2</h3><p class="total">Calidad quiere al menos <b>300 conversaciones evaluadas por semana</b> para detectar una caída; Finanzas acepta como mucho <b>+10 %</b> sobre la factura de inferencia. Con 1.000 conversaciones al día, ¿qué muestreo eliges?</p><label>Tráfico evaluado online: <input type="range" id="muestreo" min="0" max="100" step="1" value="50"> <output id="muestreo-out">50 %</output></label><p class="total" id="muestreo-texto"></p></div></div>
       <div class="panel"><h3>Lo que revelan los datos (Athena sobre Iceberg)</h3><div class="tasas" id="tasas"></div><p class="total">Tasa de devolución por producto en 90 días. Uno destaca muy por encima del resto: guarda la pregunta para el capítulo 14.</p></div>
     </div>
     <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
@@ -172,7 +184,7 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
   <h2>Lo que acabas de ver</h2>
   <p><strong>Observabilidad</strong> es poder reconstruir cada decisión del agente: qué recibió el modelo, qué herramienta propuso, qué decidió Policy, cuánto tardó Athena, qué calculó el Code Interpreter. Con <code>print()</code> y logs sueltos se sabe que «algo pasó»; con <strong>trazas distribuidas</strong> (OpenTelemetry) se sigue una conversación de principio a fin a través de Runtime, Memory, Gateway, Lambda y Code Interpreter, con sus tiempos y sus tokens.</p>
   <p><strong>Evaluación</strong> es medir la calidad con <strong>casos de referencia</strong> (el <em>golden set</em> que vive en Iceberg) y <strong>jueces</strong>: código, o un modelo con una rúbrica. Un juez con tres casos y alguien mirando funciona en tu notebook y enseña el concepto. En producción hay miles de conversaciones al día, atraviesan varios servicios y nadie está mirando: hace falta evaluar <em>online</em>, sobre tráfico real, <strong>con muestreo</strong>, y guardar el histórico. Evaluar el 100 % con jueces LLM puede duplicar la factura de inferencia: por eso el porcentaje es una decisión, no un detalle.</p>
-  <p>Es el <strong>bucle de retroalimentación</strong> del agente: sin medición no hay mejora, y con ella se paga la deuda del coste (D6), que ahora se mide por conversación y por capítulo. Y la plataforma de datos devuelve el favor: la misma Iceberg que guarda los casos de prueba muestra que un producto se devuelve el triple que los demás.</p>
+  <p>Es el <strong>bucle de retroalimentación</strong> del agente: sin medición no hay mejora. Medir el coste, eso sí, no lo limita: por eso el capítulo añade dos límites que decide el código y no el modelo, un presupuesto de <em>tokens</em> por conversación y un <em>rate limit</em> por aplicación en el Gateway, y solo entonces se paga la deuda D6. Y la plataforma de datos devuelve el favor: la misma Iceberg que guarda los casos de prueba muestra que un producto se devuelve el triple que los demás.</p>
 
   <div class="limite">
     <h3>Dónde se rompe la analogía</h3>
@@ -180,23 +192,64 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
   </div>
 
   <p>En el ordenador sería <strong>el visor de eventos y los exámenes</strong>. El visor de eventos enseña lo que pasó; los exámenes miden si se hizo bien. Y como el examinador es un modelo, hay que calibrarlo.</p>
-  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué necesitas para saber qué pasó en una conversación que atravesó cinco servicios y nadie miró, y por qué no se evalúa el 100 % del tráfico?</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para llevarte:</strong> ¿qué necesitas para saber qué pasó en una conversación que atravesó cinco servicios y nadie miró, y por qué no se evalúa el 100 % del tráfico?</p>
   <a class="volver" href="index.html">Volver al mapa del agente</a>
-  <p class="pie">La traza del simulador reproduce la forma de una traza real de AgentCore Observability (spans por servicio con tiempos y tokens). Los veredictos del juez y las tasas de devolución son los del dataset sintético.</p>
+  <p class="enlaces">🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html#catalogo-operacion" target="_blank" rel="noopener">En la presentación: El resto del catálogo</a>
+    · 🛠️ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/12_observabilidad_evaluacion.ipynb" target="_blank" rel="noopener">Constrúyelo tú: capítulo 12 del curso completo</a></p>
+  <p class="pie">Las respuestas del simulador son ejemplos típicos de lo que hacen los modelos actuales. Esta pieza no se construye en el training de 4 horas: en el curso completo tiene su propio capítulo, con laboratorio.</p>
 </main>
 
 <script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a || !a.dataset.nb) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
 
+// Tokens de cada llamada al modelo; el resto (totales y coste) se CALCULA con la fórmula del curso.
+const LLAMADAS = {
+  "converse #1": { entrada: 2310, leidos: 650, salida: 48 },     // el prefijo (herramientas y prompt) ya estaba en caché
+  "converse #2": { entrada: 2590, leidos: 2358, salida: 60 },    // relee la llamada anterior y su respuesta
+  "converse #3": { entrada: 2700, leidos: 2650, salida: 70 },
+};
+const P_IN = 3 / 1e6, P_OUT = 15 / 1e6;
+for (const k in LLAMADAS) { const c = LLAMADAS[k]; c.escritos = c.entrada - c.leidos; c.coste = (c.leidos * 0.1 + c.escritos * 1.25) * P_IN + c.salida * P_OUT; }
+const SUMA = Object.values(LLAMADAS).reduce((s, c) => ({ entrada: s.entrada + c.entrada, leidos: s.leidos + c.leidos, escritos: s.escritos + c.escritos, salida: s.salida + c.salida, coste: s.coste + c.coste }), { entrada: 0, leidos: 0, escritos: 0, salida: 0, coste: 0 });
+const n0 = x => String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");   // 7.600 (separador de miles siempre)
+const llamada = k => { const c = LLAMADAS[k]; return `Entrada ${n0(c.entrada)} tokens (${n0(c.leidos)} leídos de caché, ${n0(c.escritos)} escritos) · salida ${n0(c.salida)} · ${c.coste.toFixed(5).replace(".", ",")} $`; };
 const SPANS = [
-  { n: "invoke", s: "Runtime", k: "", t0: 0, d: 3400, det: "Sesión 7f3a… · actor C-001 (del JWT) · 3 llamadas al modelo · 5.100 tokens de entrada en total." },
-  { n: "memory.retrieve", s: "Memory", k: "", t0: 30, d: 120, det: "Namespace /preferences/C-001/ · 2 registros recuperados (top_k = 5) · 60 tokens al contexto." },
-  { n: "converse #1", s: "Bedrock", k: "bedrock", t0: 170, d: 900, det: "Entrada 2.310 tokens · salida 48 · propone consultar_pedido(TN-1003)." },
-  { n: "tools/call consultar_pedido", s: "Gateway", k: "gateway", t0: 1090, d: 1350, det: "Token M2M ✓ · Policy: permit (LecturaPermitida) · rate limit 12/100 · target PedidosTarget." },
-  { n: "nova-pedidos", s: "Lambda", k: "lambda", t0: 1110, d: 1300, det: "Athena: SELECT * FROM pedidos WHERE pedido_id = ? · 1,2 s (el tramo más lento: lago de datos, no base transaccional)." },
-  { n: "converse #2", s: "Bedrock", k: "bedrock", t0: 2460, d: 620, det: "Entrada 2.590 tokens · propone code_interpreter con el prorrateo del cupón." },
+  { n: "invoke", s: "Runtime", k: "", t0: 0, d: 3400, det: `Sesión 7f3a… · actor C-001 (del JWT) · 3 llamadas al modelo · ${n0(SUMA.entrada)} tokens de entrada (${n0(SUMA.leidos)} de caché) y ${n0(SUMA.salida)} de salida · coste de la conversación: ${SUMA.coste.toFixed(4).replace(".", ",")} $ = Σ (leídos × 0,1 + escritos × 1,25) × P + salida × P<sub>salida</sub>.` },
+  { n: "memory.retrieve", s: "Memory", k: "", t0: 30, d: 120, det: "Namespace /users/C-001/preferences · 2 registros recuperados (top_k = 5) · 60 tokens al contexto." },
+  { n: "converse #1", s: "Bedrock", k: "bedrock", t0: 170, d: 900, det: llamada("converse #1") + " · propone consultar_pedido(TN-1003)." },
+  { n: "tools/call", s: "Gateway", k: "gateway", t0: 1090, d: 1350, det: "Token M2M ✓ · Policy: permit (LecturaPermitida) · rate limit: 12 de 120 llamadas este minuto · target PedidosTarget." },
+  { n: "nova-pedidos", s: "Lambda", k: "lambda", t0: 1110, d: 1300, det: "Athena: SELECT * FROM pedidos WHERE pedido_id = ? · 1,2 s de consulta: es un lago de datos, no una base transaccional." },
+  { n: "converse #2", s: "Bedrock", k: "bedrock", t0: 2460, d: 620, det: llamada("converse #2") + " · propone code_interpreter con el prorrateo del cupón." },
   { n: "code_interpreter", s: "Code Interpreter", k: "ci", t0: 3090, d: 140, det: "Sesión de sandbox · round(5999 × 0,9) → 5399 · sin acceso a red." },
-  { n: "converse #3", s: "Bedrock", k: "bedrock", t0: 3240, d: 160, det: "Entrada 2.700 tokens · respuesta final: 53,99 € · total de la conversación: 0,018 $ (precio de ejemplo)." },
+  { n: "converse #3", s: "Bedrock", k: "bedrock", t0: 3240, d: 160, det: llamada("converse #3") + " · respuesta final: 53,99 €." },
 ];
+const FEEDBACK_LATENCIA = {
+  0: "Es el tramo que lo contiene todo: no dice dónde se va el tiempo. Baja un nivel.",
+  1: "120 ms: no es aquí donde se va el tiempo.",
+  2: "900 ms: el modelo es el segundo tramo más largo. Se puede bajar con un modelo más pequeño para decidir la herramienta, pero no es el primero.",
+  3: "Bien visto: 1,35 s de 3,4 s (el 40 %). El Gateway casi no añade: dentro está la Lambda, y dentro, Athena. Baja al tramo de la Lambda.",
+  4: "✔ Este. 1,3 s de 3,4 s son Athena consultando el lago de datos. En producción, las consultas puntuales de pedidos irían a una base transaccional (o a una caché) e Iceberg quedaría para el histórico y la analítica.",
+  5: "620 ms y casi todo leído de caché: está bien optimizado.",
+  6: "140 ms: el sandbox no es el problema.",
+  7: "160 ms: la respuesta final es rápida.",
+};
 const CASOS = [
   { id: "E01", p: "¿Dónde está mi pedido TN-1001?", esperado: "Enviado con EnvíosRápidos, llega en 2 días", ok: true, motivo: "usa consultar_envio y da el transportista y la fecha" },
   { id: "E07", p: "Quiero devolver el robot del TN-1002", esperado: "Fuera de plazo: 33 días desde la entrega", ok: true, motivo: "la Lambda aplica el plazo y el agente lo explica" },
@@ -237,6 +290,9 @@ function pintar() {
   pintarTraza();
   const det = document.getElementById("detalle");
   det.innerHTML = modo === "local" ? "Con logs sueltos no hay tramos que pulsar." : (sel === null ? "Pulsa un tramo de la traza." : `<strong style="color:var(--led)">${SPANS[sel].s} · ${SPANS[sel].n}</strong><br>${SPANS[sel].det}`);
+  document.getElementById("reto-latencia").innerHTML = modo === "local"
+    ? "La conversación tardó 3,4 s. Con estos logs, ¿podrías decir qué tramo atacar primero? Cambia a «Con AWS»."
+    : (sel === null ? "La conversación tardó 3,4 s. ¿Qué tramo atacarías primero para bajar la latencia? Púlsalo en la traza." : FEEDBACK_LATENCIA[sel]);
   const ex = document.getElementById("examen");
   if (!evaluado) ex.innerHTML = "<p class='total'>Tres casos de referencia con su respuesta esperada. El juez (un modelo con rúbrica) compara.</p>";
   else ex.innerHTML = CASOS.map(c => `<div class="veredicto ${c.ok ? "" : "mal"}"><span>${c.ok ? "✅" : "❌"}</span><span><b>${c.id}</b> «${c.p}»<span class="motivo">Esperado: ${c.esperado}. Juez: ${c.motivo}.</span></span></div>`).join("") + `<p class="total">GoalSuccessRate: 2/3 = 67 %. ${modo === "local" ? "Con tres casos y alguien mirando, vale. ¿Y con miles al día?" : "Con el conjunto completo de Iceberg y evaluación online, se convierte en una métrica continua."}</p>`;
@@ -245,11 +301,15 @@ function pintar() {
   mandos.hidden = modo !== "internet";
   const m = +document.getElementById("muestreo").value;
   document.getElementById("muestreo-out").textContent = m + " %";
-  document.getElementById("muestreo-texto").textContent = `${(1000 * m / 100).toLocaleString("es-ES")} conversaciones evaluadas al día de 1.000 · coste de los jueces ≈ +${m} % de la factura de inferencia.`;
+  const semana = Math.round(7000 * m / 100), extra = m;   // cada evaluación cuesta ≈ lo mismo que la conversación evaluada
+  const okCalidad = semana >= 300, okFinanzas = extra <= 10;
+  document.getElementById("muestreo-texto").innerHTML = `${n0(semana)} conversaciones evaluadas por semana · jueces ≈ +${extra} % de la factura de inferencia. ` +
+    (okCalidad && okFinanzas ? "<b>✔ Cumple las dos condiciones.</b> Entre un 5 % y un 10 %: en el laboratorio usamos un 20 % porque hay muy poco tráfico." :
+     !okCalidad ? "<b>✗ Calidad no tendrá muestra suficiente:</b> sube el muestreo." : "<b>✗ Finanzas no lo acepta:</b> evaluar más no te da más información útil, solo más factura.");
   document.getElementById("tasas").innerHTML = TASAS.map(([n, t, pico]) => `<div class="${pico ? "pico" : ""}"><span>${n}</span><i style="width:${t / 32 * 100}%"></i><span>${t.toLocaleString("es-ES")} %</span></div>`).join("");
   document.getElementById("leyenda").innerHTML = modo === "local"
     ? "<strong>En tu máquina</strong>: logs sueltos y un juez sobre tres casos. Funciona a pequeña escala, con alguien mirando."
-    : "<strong>En Internet</strong>: trazas que siguen la conversación por todos los servicios, evaluación con el conjunto de prueba de Iceberg y evaluación online con muestreo. Nadie está mirando, y aun así se sabe.";
+    : "<strong>Con AWS</strong>: trazas que siguen la conversación por todos los servicios, evaluación con el conjunto de prueba de Iceberg y evaluación online con muestreo. Nadie está mirando, y aun así se sabe.";
 }
 
 document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; sel = null; pintar(); }));

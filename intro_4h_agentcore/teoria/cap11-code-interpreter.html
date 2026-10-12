@@ -52,7 +52,8 @@ p { margin: 0.6rem 0; }
 .mapa-tira .actual { background: var(--led); color: var(--board); }
 .limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
 .limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
-.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
 .pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -116,6 +117,14 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 .lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .lectura th { font-family: var(--display); font-stretch: 90%; }
 @media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
 
 
 .codigo { font: 0.8rem/1.45 ui-monospace, "Cascadia Code", Consolas, monospace; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 0.6rem 0.7rem; white-space: pre-wrap; color: var(--silk); overflow-wrap: anywhere; }
@@ -133,6 +142,7 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 </style>
 </head>
 <body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
 <header class="portada lectura">
   <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="visto" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><span class="actual" title="Ejecución de código (código como acción)" aria-current="page">11</span><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
   <h1>El coprocesador del agente</h1>
@@ -143,10 +153,11 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 
 <section class="laboratorio" aria-label="Simulador de cálculo con y sin código">
   <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
     <div class="cabecera-placa">
       <div class="interruptor" role="group" aria-label="Dónde se ejecuta el código">
-        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
-        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
       </div>
     </div>
     <p class="leyenda-modo" style="min-height:0;margin-top:0.8rem">Cafetera 199,99 € y molinillo 59,99 €, cupón del 10 % sobre el total. Se devuelve solo el molinillo. ¿Cuánto se reembolsa, prorrateando el cupón?</p>
@@ -169,7 +180,7 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 
 <main class="lectura">
   <h2>Lo que acabas de ver</h2>
-  <p>Un modelo de lenguaje <strong>predice texto</strong>, no calcula. Un prorrateo con decimales le sale bien unas veces y mal otras, y con la misma seguridad. Con dinero basta un fallo. La solución es <strong>código como acción</strong>: en lugar de calcular «de cabeza», el agente <strong>escribe un programa y lo ejecuta</strong>. El resultado es exacto, repetible y se puede verificar leyendo el código.</p>
+  <p>Un modelo de lenguaje <strong>predice texto</strong>, no calcula. Un prorrateo con decimales puede salirle bien, y los modelos actuales aciertan a menudo, pero nada lo garantiza: si falla, lo dice con la misma seguridad, y nadie puede comprobar cómo llegó a la cifra. Con dinero basta un fallo. La solución es <strong>código como acción</strong>: en lugar de calcular «de cabeza», el agente <strong>escribe un programa y lo ejecuta</strong>. El resultado es exacto, repetible y se puede verificar leyendo el código.</p>
   <p>El riesgo es dónde se ejecuta. Ese código lo escribe un modelo que puede haber sido manipulado por una inyección. Con <code>exec()</code> corre <strong>en tu máquina</strong>, con tus credenciales de AWS, tus ficheros y tu red: un código «inofensivo» ya puede listar tu directorio personal. <strong>Code Interpreter</strong> lo ejecuta en una <strong>microVM aislada por sesión</strong>, sin tus credenciales ni tus ficheros, que se destruye al terminar.</p>
   <p>Y una separación importante: <strong>cálculo y límite son independientes</strong>. Code Interpreter calcula 53,99 €; si el importe superara 100 €, Policy frenaría el reembolso igualmente. Cada pieza hace lo suyo.</p>
 
@@ -179,12 +190,32 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
   </div>
 
   <p>En el ordenador sería <strong>el coprocesador matemático</strong>. La CPU razona; el coprocesador calcula. Aquí el coprocesador no está en tu placa: está en otra máquina, y por eso es seguro.</p>
-  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿por qué un cálculo que hace un modelo «de cabeza» sale distinto cada vez, y dónde tiene que ejecutarse el código que escribe un modelo?</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para llevarte:</strong> ¿por qué no puedes fiarte de un cálculo que el modelo hace «de cabeza», aunque acierte, y dónde tiene que ejecutarse el código que escribe un modelo?</p>
   <a class="volver" href="index.html">Volver al mapa del agente</a>
-  <p class="pie">Los resultados «de cabeza» del simulador reproducen los errores típicos (redondeos, cupón mal prorrateado, cupón ignorado). El código es el que escribiría el agente; el reembolso correcto es 53,99 €.</p>
+  <p class="enlaces">🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html#catalogo-control" target="_blank" rel="noopener">En la presentación: El resto del catálogo</a>
+    · 🛠️ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/11_code_interpreter.ipynb" target="_blank" rel="noopener">Constrúyelo tú: capítulo 11 del curso completo</a></p>
+  <p class="pie">Las respuestas del simulador son ejemplos típicos de lo que hacen los modelos actuales. Esta pieza no se construye en el training de 4 horas: en el curso completo tiene su propio capítulo, con laboratorio.</p>
 </main>
 
 <script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a || !a.dataset.nb) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
 
 let modo = "local", historial = [], ultimo = null;
 const MAL = [["54,00 €", "redondea el prorrateo"], ["59,99 €", "ignora el cupón"], ["53,99 €", "esta vez acierta"], ["48,59 €", "aplica el cupón dos veces"], ["53,99 €", "esta vez acierta"], ["54,00 €", "redondea el prorrateo"]];
@@ -246,7 +277,7 @@ function pintar() {
   document.getElementById("acceso").innerHTML = acc.map(([t, k]) => `<span class="${k}">${k === "si" ? "⚠️ sí" : "✓ no"}</span><span>${t}</span>`).join("");
   document.getElementById("leyenda").innerHTML = modo === "local"
     ? "<strong>En tu máquina</strong>, ejecutar con <code>exec()</code> el código que escribe un modelo es ejecutarlo con tus permisos. Peligroso, aunque hoy el código sea inofensivo."
-    : "<strong>En Internet</strong>, Code Interpreter ejecuta el código en una microVM aislada por sesión, sin credenciales ni ficheros tuyos. El cálculo es el mismo; el riesgo, no.";
+    : "<strong>Con AWS</strong>, Code Interpreter ejecuta el código en una microVM aislada por sesión, sin credenciales ni ficheros tuyos. El cálculo es el mismo; el riesgo, no.";
   pintarPlaca();
 }
 

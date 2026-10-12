@@ -52,7 +52,8 @@ p { margin: 0.6rem 0; }
 .mapa-tira .actual { background: var(--led); color: var(--board); }
 .limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
 .limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
-.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
 .pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -116,6 +117,14 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 .lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .lectura th { font-family: var(--display); font-stretch: 90%; }
 @media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
 
 
 .variantes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.4rem; }
@@ -134,33 +143,36 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 </style>
 </head>
 <body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
 <header class="portada lectura">
   <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="visto" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="visto" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="visto" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><span class="actual" title="Mejora continua y experimentación" aria-current="page">13</span><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
   <h1>Actualizar en pocos equipos</h1>
   <p class="componente">Componente agéntico: mejora continua y experimentación. Capítulo 13.</p>
   <p class="escena"><strong>Viernes, 17:30.</strong> Alguien propone cambiar el prompt «porque es mucho mejor». ¿Para todos los clientes? ¿Ahora?</p>
-  <p>Tenemos un prompt nuevo que pide confirmar el pedido antes de cada acción. En tu máquina solo puedes probarlo a mano; en Internet puedes repartir una parte del tráfico real y medir. Simula días de tráfico hasta que la diferencia sea clara… o no.</p>
+  <p>Es el experimento del laboratorio: el chat de visitantes con su prompt actual frente a uno que responde más breve y termina con una pregunta. En tu máquina solo puedes probarlo a mano; con AWS repartes tráfico real y mides. Decide cuánto tráfico mandas a B y cuándo paras: primero con las 40 conversaciones del laboratorio, después con días de tráfico.</p>
 </header>
 
 <section class="laboratorio" aria-label="Simulador de experimento A/B">
   <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
     <div class="cabecera-placa">
       <div class="interruptor" role="group" aria-label="Dónde vive el agente">
-        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
-        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
       </div>
     </div>
     <div class="variantes">
-      <div class="variante"><b>A · Control</b>Prompt actual: nunca inventes; usa herramientas; escala si procede.<span class="n" id="n-a"></span></div>
-      <div class="variante b"><b>B · Tratamiento</b>Igual, más: «confirma el pedido con el cliente antes de cualquier acción de escritura».<span class="n" id="n-b"></span></div>
+      <div class="variante"><b>A · Control (NovaWebActual)</b>Prompt actual del chat de visitantes.<span class="n" id="n-a"></span></div>
+      <div class="variante b"><b>B · Tratamiento (NovaWebBreve)</b>Igual, más: «responde en dos frases y termina con una pregunta de seguimiento».<span class="n" id="n-b"></span></div>
     </div>
     <div class="rejilla">
-      <div class="panel"><h3 id="titulo-grafica">GoalSuccessRate por variante</h3><div id="grafica"></div><div class="veredicto" id="veredicto"></div>
+      <div class="panel"><h3 id="titulo-grafica">Helpfulness por variante</h3><div id="grafica"></div><div class="veredicto" id="veredicto"></div>
         <div class="mandos" id="mandos"><label>Tráfico que va a B: <input type="range" id="reparto" min="5" max="50" step="5" value="10"> <output id="reparto-out">10 %</output></label></div></div>
       <div class="lienzo"><svg id="placa" viewBox="0 0 640 330" role="img" aria-label="Cómo se reparte el tráfico"></svg></div>
     </div>
     <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
     <div class="controles">
+      <button type="button" class="boton secundario" id="laboratorio">Simular el laboratorio (40 conversaciones)</button>
       <button type="button" class="boton primario" id="simular">Simular un día de tráfico (1.000 conversaciones)</button>
       <button type="button" class="boton secundario" id="promover" disabled>Promover la variante ganadora</button>
       <button type="button" class="boton secundario" id="reiniciar">Empezar de nuevo</button>
@@ -180,13 +192,34 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
   </div>
 
   <p>En el ordenador sería <strong>probar una actualización en pocos equipos</strong>. Una actualización se prueba primero en unos pocos equipos. Aquí los «equipos» son conversaciones reales, así que se mide con cuidado antes de instalarla en todos.</p>
-  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué diferencia hay entre un prompt «diferente» y un prompt «mejor», y cuántas conversaciones hacen falta para distinguirlos?</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para llevarte:</strong> ¿qué diferencia hay entre un prompt «diferente» y un prompt «mejor», y cuántas conversaciones hacen falta para distinguirlos?</p>
   <a class="volver" href="index.html">Volver al mapa del agente</a>
-  <p class="pie">El simulador usa tasas verdaderas ocultas (A 82 %, B 87 %) y un generador determinista, con intervalos de confianza del 95 % aproximados. En el laboratorio, las tasas las produce la evaluación online sobre tu tráfico.</p>
+  <p class="enlaces">🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html#catalogo-operacion" target="_blank" rel="noopener">En la presentación: El resto del catálogo</a>
+    · 🛠️ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/13_ab_testing.ipynb" target="_blank" rel="noopener">Constrúyelo tú: capítulo 13 del curso completo</a></p>
+  <p class="pie">Las respuestas del simulador son ejemplos típicos de lo que hacen los modelos actuales. Esta pieza no se construye en el training de 4 horas: en el curso completo tiene su propio capítulo, con laboratorio.</p>
 </main>
 
 <script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a || !a.dataset.nb) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
 
+let laboratorio = false;
 let modo = "local", dias = 0, nA = 0, kA = 0, nB = 0, kB = 0, manual = null, promovido = false, semilla = 12345;
 const PA = 0.82, PB = 0.87;
 function azar() { semilla = (Math.imul(semilla, 1664525) + 1013904223) >>> 0; return semilla / 4294967296; }
@@ -198,13 +231,13 @@ function nodo(x, y, w, h, titulo, sub, clases = "") {
 }
 function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
 
-function simular() {
+function simular(conversaciones = 1000) {
   if (modo === "local") { manual = { a: 3, b: 3 }; pintar(); return; }
-  const reparto = +document.getElementById("reparto").value / 100;
-  for (let i = 0; i < 1000; i++) {
+  const reparto = conversaciones === 40 ? 0.5 : +document.getElementById("reparto").value / 100;
+  for (let i = 0; i < conversaciones; i++) {
     if (azar() < reparto) { nB++; if (azar() < PB) kB++; } else { nA++; if (azar() < PA) kA++; }
   }
-  dias++;
+  if (conversaciones === 1000) dias++; else laboratorio = true;
   pintar();
 }
 
@@ -231,7 +264,8 @@ function pintarGrafica() {
   let v = "";
   if (nA + nB) {
     const claro = lb > ha || la > hb;
-    v = promovido ? "B promovida: el Gateway envía ahora el 100 % del tráfico a la variante ganadora." : (claro ? `Diferencia clara tras ${dias} día(s): los intervalos no se solapan. ${pb > pa ? "B gana." : "A gana."}` : `Tras ${dias} día(s) la diferencia aún cabe en el azar: los intervalos se solapan. Sigue midiendo (o manda más tráfico a B).`);
+    const cuando = dias ? `tras ${dias} día(s)` : `con ${nA + nB} conversaciones`;
+    v = promovido ? "B promovida: el tratamiento pasa a ser lo que reciben todos los visitantes." : (claro ? `Diferencia clara ${cuando}: los intervalos no se solapan. ${pb > pa ? "B gana." : "A gana."}` : `${cuando[0].toUpperCase() + cuando.slice(1)}, la diferencia aún cabe en el azar: los intervalos se solapan. ${dias ? "Sigue midiendo (o manda más tráfico a B)." : "Es lo que verás en el laboratorio: no promover también es una decisión."}`);
     document.getElementById("promover").disabled = !(claro && pb > pa) || promovido;
   } else document.getElementById("promover").disabled = true;
   document.getElementById("veredicto").textContent = v;
@@ -248,7 +282,7 @@ function pintarPlaca() {
   } else {
     s += ruta("M124 168 H180", true) + nodo(180, 120, 150, 96, "Gateway", `reparte: A ${100 - (promovido ? 100 : reparto)} % · B ${promovido ? 100 : reparto} %`, "nube activo");
     s += ruta("M330 150 C360 150 360 90 400 90", !promovido) + ruta("M330 186 C360 186 360 246 400 246", true);
-    s += nodo(400, 62, 226, 56, "Bundle A (control)", "prompt actual · mismo código", promovido ? "apagado" : "") + nodo(400, 218, 226, 56, "Bundle B (tratamiento)", "prompt con confirmación", "activo");
+    s += nodo(400, 62, 226, 56, "Bundle A (control)", "prompt actual · mismo código", promovido ? "apagado" : "") + nodo(400, 218, 226, 56, "Bundle B (tratamiento)", "prompt breve", "activo");
     s += ruta("M513 118 V140", "tenue") + ruta("M513 218 V196", "tenue") + nodo(430, 140, 170, 56, "Evaluación online", "mide cada variante", "nube");
     s += `<text class="suelto" x="180" y="310">Configuration bundles: la configuración cambia sin redesplegar; el A/B decide con datos.</text>`;
   }
@@ -260,19 +294,21 @@ function pintar() {
   document.getElementById("mandos").hidden = modo !== "internet";
   document.getElementById("reparto-out").textContent = document.getElementById("reparto").value + " %";
   document.getElementById("simular").textContent = modo === "local" ? "Hacer 3 pruebas manuales con cada prompt" : "Simular un día de tráfico (1.000 conversaciones)";
-  document.getElementById("n-a").textContent = modo === "internet" && nA ? `${nA.toLocaleString("es-ES")} conversaciones · ${kA.toLocaleString("es-ES")} con éxito` : "";
-  document.getElementById("n-b").textContent = modo === "internet" && nB ? `${nB.toLocaleString("es-ES")} conversaciones · ${kB.toLocaleString("es-ES")} con éxito` : "";
-  document.getElementById("titulo-grafica").textContent = modo === "local" ? "¿Cuál es mejor?" : "GoalSuccessRate por variante (IC 95 %)";
+  document.getElementById("n-a").textContent = modo === "internet" && nA ? `${nA.toLocaleString("es-ES")} conversaciones · ${kA.toLocaleString("es-ES")} útiles` : "";
+  document.getElementById("n-b").textContent = modo === "internet" && nB ? `${nB.toLocaleString("es-ES")} conversaciones · ${kB.toLocaleString("es-ES")} útiles` : "";
+  document.getElementById("titulo-grafica").textContent = modo === "local" ? "¿Cuál es mejor?" : "Helpfulness por variante (IC 95 %)";
+  document.getElementById("laboratorio").hidden = modo !== "internet";
   pintarGrafica(); pintarPlaca();
   document.getElementById("leyenda").innerHTML = modo === "local"
     ? "<strong>En tu máquina</strong> no hay tráfico real: solo pruebas manuales, que no distinguen «diferente» de «mejor». Este componente no existe aquí."
-    : "<strong>En Internet</strong> el Gateway reparte el tráfico entre bundles y la evaluación online mide. Empieza con poco tráfico en B: son clientes reales.";
+    : "<strong>Con AWS</strong>, el Gateway reparte las sesiones entre bundles y la evaluación online mide. Empieza con poco tráfico en B: son clientes reales.";
 }
 
 document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; pintar(); }));
-document.getElementById("simular").addEventListener("click", simular);
+document.getElementById("simular").addEventListener("click", () => simular(1000));
+document.getElementById("laboratorio").addEventListener("click", () => simular(40));
 document.getElementById("promover").addEventListener("click", () => { promovido = true; pintar(); });
-document.getElementById("reiniciar").addEventListener("click", () => { dias = 0; nA = kA = nB = kB = 0; manual = null; promovido = false; semilla = 12345; pintar(); });
+document.getElementById("reiniciar").addEventListener("click", () => { dias = 0; nA = kA = nB = kB = 0; manual = null; promovido = false; laboratorio = false; semilla = 12345; pintar(); });
 document.getElementById("reparto").addEventListener("input", pintar);
 pintar();
 

@@ -5,6 +5,7 @@ del Runtime (Amazon Linux 2023, GLIBC 2.34, arm64) y añade el código de agent/
 
 Uso:  python scripts/empaquetar.py      →  build/agent.zip
 """
+import os
 import shutil
 import subprocess
 import sys
@@ -14,7 +15,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[1]
 CODIGO = RAIZ / "agent"
 BUILD = RAIZ / "build"
-STAGING = BUILD / "staging"
+STAGING = Path(os.environ.get("NOVA_STAGING_DIR", BUILD / "staging"))   # en Colab, fuera de Drive (miles de ficheros)
 ZIP = BUILD / "agent.zip"
 PYTHON = "3.13"  # debe coincidir con runtime = "PYTHON_3_13" en infra/main.tf
 PLATAFORMAS = ["aarch64-manylinux2014", "aarch64-manylinux_2_28", "aarch64-manylinux_2_34"]
@@ -52,5 +53,6 @@ def crear_zip() -> None:
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")  # la consola de Windows (cp1252) no imprime «…»
     BUILD.mkdir(exist_ok=True)
+    STAGING.parent.mkdir(parents=True, exist_ok=True)
     instalar_dependencias()
     crear_zip()

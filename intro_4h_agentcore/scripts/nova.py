@@ -20,7 +20,10 @@ def salidas_terraform() -> dict:
     """Lee las salidas de `terraform output` (ARN del agente, región, ID de memoria…)."""
     r = subprocess.run(["terraform", f"-chdir={INFRA}", "output", "-json"],
                        capture_output=True, text=True, check=True)
-    return {k: v["value"] for k, v in json.loads(r.stdout).items()}
+    salidas = {k: v["value"] for k, v in json.loads(r.stdout).items()}
+    if "agent_runtime_arn" not in salidas:
+        raise RuntimeError("No hay ningún despliegue: ejecuta la Parte 0 del notebook (o terraform -chdir=infra apply).")
+    return salidas
 
 
 def nueva_sesion() -> str:

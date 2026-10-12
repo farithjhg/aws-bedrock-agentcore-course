@@ -1,20 +1,21 @@
 # Agenda y guion · AgentCore en 4 horas (online)
 
-**Formato:** demo guiada. El formador comparte pantalla y ejecuta `demo/demo_intro.ipynb`; los asistentes predicen en el chat.
+**Formato:** demo guiada. El formador comparte pantalla con la [presentación](https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html) y ejecuta `demo/demo_intro.ipynb` (en Colab o en local); los asistentes predicen en el chat.
+**La presentación** sigue esta agenda escena a escena (apertura, mapa, demo 1, demo 2, catálogo, coste y cierre), con la placa del agente animada; desde cada escena se abre la demo en Colab (▶, tecla C) y la página de teoría (🧭, tecla T). Teclas: → y ←, **N** notas del presentador (este guion, resumido), **O** índice, **F** pantalla completa. Cada bloque tiene su enlace: `…/presentacion_intro.html#demo1`, `#sesiones`, `#catalogo-herramientas`, `#coste`…
 **Hilo conductor:** TiendaNova, una tienda online, quiere un agente de atención al cliente (Nova Assist). Laura es una clienta.
 **Principio:** la teoría manda; AWS entra cuando el agente sale a Internet.
 
 | Hora | Bloque | Material |
 |---|---|---|
 | 0:00–0:15 | Apertura | — |
-| 0:15–0:40 | El mapa del agente | `teoria/index.html` |
-| 0:40–1:25 | 💻 Demo 1 · Nace en tu máquina | Notebook, parte 1 · `cap01`, `cap02` |
+| 0:15–0:40 | El mapa del agente | [`teoria/index.html`](https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/teoria/index.html) · escena `#mapa` |
+| 0:40–1:25 | 💻 Demo 1 · Nace en tu máquina | Notebook, parte 1 · `cap01`, `cap02` · escenas `#demo1`, `#reglas` |
 | 1:25–1:35 | *Descanso* | |
-| 1:35–2:20 | 💻 Demo 2 · Sale a Internet | Notebook, parte 2 · `infra/main.tf` · `cap03`, `cap04`, `cap05` |
-| 2:20–3:05 | 🗺️ El resto del catálogo | `cap07`–`cap15` |
+| 1:35–2:20 | 💻 Demo 2 · Sale a Internet | Notebook, parte 2 · `infra/main.tf` · `cap03`, `cap04`, `cap05` · escenas `#terraform`, `#sesiones`, `#memoria` |
+| 2:20–3:05 | 🗺️ El resto del catálogo | `cap07`–`cap15` · escenas `#catalogo-herramientas`, `#catalogo-control`, `#catalogo-operacion`, `#martes` |
 | 3:05–3:15 | *Descanso* | |
-| 3:15–3:40 | Coste, operación y decisión | Notebook, parte 3 · `cap06` · consola |
-| 3:40–4:00 | Preguntas y siguiente paso | `README.md` |
+| 3:15–3:40 | Coste, operación y decisión | Notebook, parte 3 · `cap06` · consola · escenas `#coste`, `#decision` |
+| 3:40–4:00 | Preguntas y siguiente paso | `README.md` · escena `#siguiente` |
 
 **Margen:** la agenda tiene unos 10 minutos de holgura repartidos. Si vas tarde, recorta el catálogo (bloque 2:20), nunca las demos.
 
@@ -38,10 +39,12 @@ herramientas = periféricos; memoria = disco…
 1. **✋** «¿Cuántos días tengo para devolver?». Recoge apuestas y ejecuta el modelo solo.
    - *Esperado:* «14 días» (mínimo legal UE), o una respuesta genérica. TiendaNova da **30**.
    - *Si contesta otra cosa:* la idea es la misma: el modelo no conoce tu negocio. Ábrelo a debate.
+   - 🔍 La celda siguiente **clasifica la cifra con código** (14, 30, otra o ninguna): cuenta la rama que haya salido; la lección no depende de la cifra.
    - 🧭 `cap01`: dónde se rompe la analogía de la ROM (el modelo reconstruye, no recuerda literalmente).
 2. Enseña `agent/herramientas.py` (2 minutos, sin leer línea a línea). El *docstring* **es** lo que lee el modelo para elegir.
    Ejecuta con herramientas: ahora dice 30 días y calcula 84,95 € (89,90 − 4,95).
 3. **✋** «¿Convencerá Marcos al agente?». *Esperado:* no; la herramienta no le deja ver el pedido de Laura.
+   - 🔍 La celda siguiente llama a la herramienta **directamente como C-002**, sin modelo: error. Convenza o no Marcos a la conversación, lo que decide es el código.
    - **Mensaje clave:** el modelo puede *querer* ayudar; el código decide qué es posible. Las reglas, en código, no en el prompt.
    - 🧭 `cap02`.
 4. Cierre: «Todo esto vive en mi portátil. ¿Qué pasa con 10.000 clientes a la vez?»
@@ -83,19 +86,20 @@ Menciona también, sin página: **Registry** (catálogo de agentes y herramienta
 - Consola: el Runtime y sus versiones; la Memory y los registros de Laura; CloudWatch GenAI Observability, si está activado.
 - **¿Cuándo AgentCore?** Cuando necesitas aislamiento por sesión, memoria gestionada, identidad y políticas sin construirlas tú.
   **¿Cuándo no?** Un prototipo interno de un solo usuario, o si ya tienes esa plataforma montada (ECS/Lambda + tu propia memoria).
-- Ejecuta `terraform -chdir=infra destroy` en directo: la IaC también sirve para apagar.
+- Apaga en directo: la última celda del notebook ejecuta `terraform destroy` (pide escribir DESTRUIR), o `terraform -chdir=infra destroy` en un terminal. La IaC también sirve para apagar.
 
 ## 3:40–4:00 · Preguntas y siguiente paso
 - Vuelve a las respuestas de la apertura: ¿cuáles hemos visto resolver?
-- El repositorio: cómo repetir la demo en su cuenta (`README.md`, `PREREQUISITOS.md` §2).
-- El curso completo (3 días, aprender haciendo): los 15 componentes, construidos uno a uno.
+- El repositorio: cómo repetir la demo en su cuenta, desde Google Colab sin instalar nada o en local con Terraform (`README.md`, `PREREQUISITOS.md` §2).
+- El [curso completo](https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/) (3,5 días, aprender haciendo): los 15 componentes, construidos uno a uno, con sus 18 notebooks en Colab.
 
 ---
 
 ## Si algo falla en directo
 | Síntoma | Qué hacer |
 |---|---|
-| `ExpiredToken` / `UnrecognizedClient` | `aws sso login` en el terminal del notebook y reinicia el kernel |
+| `ExpiredToken` / `UnrecognizedClient` | En local: `aws sso login` en el terminal del notebook y reinicia el kernel. En Colab: copia las credenciales nuevas en los Secretos y repite la celda ☁️ |
+| Colab desconecta la sesión | Repite la celda ☁️: recupera el estado de Terraform de Drive; los recursos de AWS siguen donde estaban |
 | `ValidationException` sobre el modelo | `model_id` no es un perfil `eu.`, o falta el formulario de Anthropic |
 | `ThrottlingException` | Espera 30 s y repite; con 26 personas mirando, sigue con el vídeo grabado |
 | La preferencia no aparece tras 2 min | Sigue con el catálogo y vuelve al final; la extracción a veces tarda más |

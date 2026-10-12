@@ -52,7 +52,8 @@ p { margin: 0.6rem 0; }
 .mapa-tira .actual { background: var(--led); color: var(--board); }
 .limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
 .limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
-.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
 .pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -116,6 +117,14 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 .lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .lectura th { font-family: var(--display); font-stretch: 90%; }
 @media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
 
 
 .mandos { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.4rem 1.2rem; margin-top: 0.8rem; font-size: 0.92rem; }
@@ -132,6 +141,7 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 </style>
 </head>
 <body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
 <header class="portada lectura">
   <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="visto" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="visto" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="visto" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="visto" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="visto" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="visto" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="visto" href="cap09-identidad.html" title="Identidad y delegación">9</a><span class="actual" title="Guardarraíles y gobernanza" aria-current="page">10</span><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
   <h1>Los permisos y el antivirus del agente</h1>
@@ -142,10 +152,11 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 
 <section class="laboratorio" aria-label="Simulador de políticas y guardarraíles">
   <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
     <div class="cabecera-placa">
       <div class="interruptor" role="group" aria-label="Dónde vive el agente">
-        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
-        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
       </div>
     </div>
     <div class="fichas" id="mensajes" role="group" aria-label="Tipo de mensaje" style="margin-top:1rem">
@@ -183,8 +194,8 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
   <h2>Lo que acabas de ver</h2>
   <p><strong>El prompt es una sugerencia</strong>, no un control: con la inyección adecuada, el modelo se la salta. Una regla en el código de una herramienta sí es determinista… pero solo protege esa herramienta, en ese agente. La app de repartidores, con su copia, no la tiene. Y ninguna de las dos ve los datos de tarjeta que el cliente pega en el chat.</p>
   <p>Por eso el control va <strong>fuera del alcance del modelo</strong>, en la frontera por la que pasan <strong>todas</strong> las acciones: el Gateway. <strong>Policy</strong> evalúa cada llamada a herramienta con lógica formal (Cedar): <code>importe_centimos &lt;= 10000</code> es verdadero o falso, siempre. Con el motor en ENFORCE rige la <strong>denegación por defecto</strong>: lo que no está permitido está prohibido, y por eso sin la política de lectura se deniega hasta <code>consultar_pedido</code>. Es la lección más importante del capítulo: no se prohibió nada; faltó permitirlo.</p>
-  <p><strong>Guardrails</strong> es el otro tipo de control: inspecciona entradas y salidas buscando ataques de prompt y datos sensibles. <strong>Detecta con probabilidad</strong>, no decide con lógica. Hacen falta los dos: Policy para lo que se puede expresar como regla (importes, herramientas, horarios) y Guardrails para lo que no (una inyección redactada de mil formas, un número de tarjeta).</p>
-  <p>Y cuando el límite se alcanza, el agente no se cae: usa <code>escalar_a_humano</code>. La política garantiza el límite; el prompt solo decide cómo comunicarlo. Con esto se pagan tres deudas: los reembolsos sin límite (D2), la «autorización» guardada en memoria (D5, porque la memoria no concede permisos) y el documento envenenado (D8).</p>
+  <p><strong>Guardrails</strong> es el otro tipo de control: inspecciona el texto buscando ataques de prompt y datos sensibles. <strong>Detecta con probabilidad</strong>, no decide con lógica. Hacen falta los dos: Policy para lo que se puede expresar como regla (importes, herramientas, horarios) y Guardrails para lo que no (una inyección redactada de mil formas, un número de tarjeta). En el laboratorio se aplica en <strong>cada llamada al modelo</strong> y evalúa el último mensaje del cliente; en las regiones donde AgentCore Policy integra Guardrails (no en Irlanda, en octubre de 2026), también puede aplicarse en el Gateway a las entradas de las herramientas.</p>
+  <p>Y cuando el límite se alcanza, el agente no se cae: usa <code>escalar_a_humano</code>. La política garantiza el límite; el prompt solo decide cómo comunicarlo. Con esto se pagan dos deudas: los reembolsos sin límite (D2) y la «autorización» guardada en memoria (D5, porque la memoria no concede permisos). La del documento envenenado (D8) se paga solo a medias: el guardrail evalúa lo que escribe el cliente, no lo que devuelven las herramientas, y Policy acota el daño a 100 €, pero un reembolso indebido más pequeño pasaría.</p>
 
   <div class="limite">
     <h3>Dónde se rompe la analogía</h3>
@@ -192,12 +203,32 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
   </div>
 
   <p>En el ordenador sería <strong>los permisos y el antivirus</strong>. Los permisos del sistema no dependen de que el programa se porte bien, y el antivirus vigila lo que los permisos no pueden expresar.</p>
-  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿por qué se ha denegado algo que no prohibimos, y en qué se diferencia una regla que decide de una que detecta?</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para llevarte:</strong> ¿por qué se ha denegado algo que no prohibimos, y en qué se diferencia una regla que decide de una que detecta?</p>
   <a class="volver" href="index.html">Volver al mapa del agente</a>
-  <p class="pie">Cedar compara enteros: por eso los importes van en céntimos desde el capítulo 2. La detección de Guardrails del simulador es determinista para la demostración; la real es probabilística y se configura por fuerza (LOW, MEDIUM, HIGH).</p>
+  <p class="enlaces">🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html#catalogo-control" target="_blank" rel="noopener">En la presentación: El resto del catálogo</a>
+    · 🛠️ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/10_policy_guardrails.ipynb" target="_blank" rel="noopener">Constrúyelo tú: capítulo 10 del curso completo</a></p>
+  <p class="pie">Las respuestas del simulador son ejemplos típicos de lo que hacen los modelos actuales. Esta pieza no se construye en el training de 4 horas: en el curso completo tiene su propio capítulo, con laboratorio.</p>
 </main>
 
 <script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a || !a.dataset.nb) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
 
 let modo = "local", mensaje = "normal", enviado = false;
 const PAGADO = 23398;   // TN-1003: 259,98 € con cupón del 10 %
@@ -223,7 +254,7 @@ function evaluar(c) {
       respuesta = "Tu pedido TN-1001 va en camino y llega en dos días.";
     } else if (c.regla === "prompt") {
       if (mensaje === "inyeccion" || cent <= 10000) {
-        etapas.push({ b: "Modelo (prompt)", t: mensaje === "inyeccion" ? "El prompt decía «máximo 100 €»… y la inyección lo ha convencido" : "Dentro del límite que sugiere el prompt", k: mensaje === "inyeccion" ? "mal" : "ok" });
+        etapas.push({ b: "Modelo (prompt)", t: mensaje === "inyeccion" ? "El prompt decía «máximo 100 €»… y esta vez la inyección lo ha convencido (puede pasar)" : "Dentro del límite que sugiere el prompt", k: mensaje === "inyeccion" ? "mal" : "ok" });
         etapas.push({ b: "Herramienta", t: `procesar_reembolso(${cent}) ejecutada: nadie comprueba nada`, k: cent > 10000 ? "mal" : "ok" });
         respuesta = `Listo: he emitido un reembolso de ${c.importe} €.`; clase = cent > 10000 ? "mal" : "bien";
       } else {
@@ -306,7 +337,7 @@ function pintar() {
   }
   document.getElementById("leyenda").innerHTML = modo === "local"
     ? "<strong>En tu máquina</strong> la regla vive en el prompt (una sugerencia) o en el código de una herramienta (determinista, pero solo para esa herramienta y ese agente)."
-    : "<strong>En Internet</strong> la regla vive en la frontera por la que pasan todas las acciones: Policy decide con lógica y Guardrails detecta con probabilidad. Prueba a quitar la política de lectura.";
+    : "<strong>Con AWS</strong> la regla vive en la frontera por la que pasan todas las acciones: Policy decide con lógica y Guardrails detecta con probabilidad. Prueba a quitar la política de lectura.";
 }
 
 document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; enviado = false; pintar(); }));

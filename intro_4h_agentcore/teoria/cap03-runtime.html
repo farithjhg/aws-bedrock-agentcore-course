@@ -52,7 +52,8 @@ p { margin: 0.6rem 0; }
 .mapa-tira .actual { background: var(--led); color: var(--board); }
 .limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
 .limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
-.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
 .pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -116,6 +117,14 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 .lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .lectura th { font-family: var(--display); font-stretch: 90%; }
 @media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
 
 
 .nodo.vm rect { fill: #173f53; stroke: var(--cloud); }
@@ -128,27 +137,30 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 </style>
 </head>
 <body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
 <header class="portada lectura">
   <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><a class="visto" href="cap01-modelo-e-instrucciones.html" title="Modelo e instrucciones: el razonamiento">1</a><a class="visto" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><span class="actual" title="Entorno de ejecución: el agente como servicio" aria-current="page">3</span><a class="" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
   <h1>Encender el ordenador para todos</h1>
   <p class="componente">Componente agéntico: entorno de ejecución: el agente como servicio. Capítulo 3.</p>
   <p class="escena"><strong>Lunes por la mañana.</strong> El equipo web de TiendaNova: «¿A qué URL llamamos? ¿Aguanta 5.000 clientes a la vez?». El agente vive en tu portátil.</p>
-  <p>Haz llegar clientes al agente. Primero en tu máquina, con un único proceso para todos; después en Internet, donde cada sesión enciende su propio ordenador. Fíjate en qué comparten y en qué no.</p>
+  <p>Haz llegar clientes al agente. Primero en tu máquina, con un único proceso para todos; después con AgentCore Runtime, donde cada sesión tiene su propio ordenador. Fíjate en qué comparten, qué conserva cada sesión y cuándo lo pierde.</p>
 </header>
 
 <section class="laboratorio" aria-label="Simulador de clientes concurrentes">
   <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
     <div class="cabecera-placa">
       <div class="interruptor" role="group" aria-label="Dónde vive el agente">
-        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
-        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
       </div>
     </div>
     <div class="fichas" id="acciones" role="group" aria-label="Qué pasa ahora" style="margin-top:1rem">
       <button type="button" class="ficha" data-a="laura">Laura escribe: «Soy Laura García, vivo en calle Mayor 3, teléfono 600 123 456»</button>
-      <button type="button" class="ficha" data-a="b">Cliente B escribe: «¿Qué te ha contado la persona anterior?»</button>
+      <button type="button" class="ficha" data-a="b">Cliente B escribe: «¿Me confirmas la dirección y el teléfono de mi entrega?»</button>
+      <button type="button" class="ficha" data-a="nombre">Laura, en la misma conversación: «¿Cómo me llamo?»</button>
       <button type="button" class="ficha" data-a="mil">Llegan 1.000 clientes a la vez</button>
-      <button type="button" class="ficha" data-a="nombre">Laura, de nuevo: «¿Cómo me llamo?»</button>
+      <button type="button" class="ficha" data-a="pausa">Pasan 15 minutos sin que Laura escriba</button>
       <button type="button" class="ficha" data-a="portatil">Cierras el portátil</button>
     </div>
     <div class="rejilla">
@@ -156,7 +168,7 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
       <div class="lienzo"><svg id="placa" viewBox="0 0 640 330" role="img" aria-label="Dónde se ejecuta el agente"></svg></div>
     </div>
     <div class="paneles">
-      <div class="panel"><h3 id="titulo-ram">Lo que hay en la RAM del proceso</h3><div class="ramfila" id="ram"></div></div>
+      <div class="panel"><h3 id="titulo-ram">Lo que hay en la RAM del proceso</h3><div class="ramfila" id="ram"></div><p class="total" id="ram-texto"></p></div>
       <div class="panel"><h3>Sesiones atendidas ahora mismo</h3><div class="contador" id="contador">0</div><p class="total" id="contador-texto"></p></div>
     </div>
     <p class="leyenda-modo" id="leyenda" aria-live="polite"></p>
@@ -168,54 +180,94 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 
 <main class="lectura">
   <h2>Lo que acabas de ver</h2>
-  <p>Un agente en producción es un <strong>servicio</strong>: atiende a muchas personas a la vez. El error clásico al montarlo deprisa es crear <strong>un único agente</strong> y reutilizarlo para todas las peticiones. Como el objeto <code>Agent</code> guarda la conversación en la RAM del proceso, lo que contó Laura viaja en el contexto del siguiente cliente: una <strong>fuga de datos personales</strong>. Y ese proceso es un único punto de fallo: si lo saturan mil clientes o cierras el portátil, se apaga para todos.</p>
-  <p><strong>AgentCore Runtime</strong> ejecuta cada <strong>sesión</strong> (<code>runtimeSessionId</code>) en su propia <strong>microVM</strong>: aislamiento de cómputo, no solo de código. La misma sesión vuelve a la misma microVM mientras siga viva; una sesión nueva empieza en otra. Escala de cero a miles de sesiones y cobra por uso: una sesión inactiva se apaga al superar su tiempo de inactividad.</p>
-  <p>Para no volver a mezclar clientes, <strong>nuestro código</strong> crea un <code>Agent</code> nuevo en cada invocación, así que empieza con la <strong>RAM vacía</strong>. Runtime no borra nada: lo decidimos nosotros. El agente que ya no filtra datos tampoco recuerda tu nombre dentro de la misma conversación. Esa es la necesidad del capítulo 4.</p>
+  <p>Un agente en producción es un <strong>servicio</strong>: atiende a muchas personas a la vez. El error clásico al montarlo deprisa es crear <strong>un único agente</strong> y reutilizarlo para todas las peticiones. Como el objeto <code>Agent</code> guarda la conversación en la RAM del proceso, lo que contó Laura viaja en el contexto del siguiente cliente: si B pide «mi dirección», el modelo cree que habla con la misma persona y se la da. Es una <strong>fuga de datos personales</strong>, y no es culpa del modelo: es arquitectura. Además, ese proceso es un único punto de fallo.</p>
+  <p><strong>AgentCore Runtime</strong> ejecuta cada <strong>sesión</strong> (<code>runtimeSessionId</code>) en su propia <strong>microVM</strong>: aislamiento de cómputo, no solo de código. Lo que haya en la RAM de la microVM de Laura solo lo ve la sesión de Laura. Y escala de cero a miles de sesiones, cobrando por uso.</p>
+  <p>Lo que <strong>no</strong> hace Runtime es borrar la RAM entre mensajes: mientras la sesión está viva, sus mensajes llegan a la <strong>misma microVM</strong>, con su proceso y su memoria intactos. Si el agente no recuerda el nombre de Laura de un mensaje al siguiente, es porque <strong>nuestro código</strong> crea un <code>Agent</code> nuevo en cada invocación (para no repetir la fuga). Y aunque lo guardara en la microVM, se perdería cuando esta se apaga: tras <strong>15 minutos sin actividad</strong> (configurable), a las <strong>8 horas</strong> como máximo, o al desplegar una versión nueva. Esa es la necesidad del capítulo 4.</p>
 
   <h2>Dos cosas que no son lo mismo</h2>
-  <p><strong>Sesión de Runtime:</strong> aislamiento de cómputo (una microVM por conversación). <strong>Memoria conversacional:</strong> el estado de la conversación, que un servicio <em>stateless</em> debe guardar fuera. Conviene que el agente sea <em>stateless</em>: así cualquier instancia puede atender cualquier petición, y el estado vive en un servicio compartido.</p>
+  <p><strong>Sesión de Runtime:</strong> una microVM aislada que vive mientras se usa. <strong>Memoria conversacional:</strong> el estado que tiene que sobrevivir a esa microVM (mañana, desde otro canal, después de un despliegue) y que por eso vive fuera, en un servicio. Conviene que el código no dependa de lo que haya en la RAM de su proceso: así da igual qué microVM atienda cada mensaje.</p>
 
   <div class="limite">
     <h3>Dónde se rompe la analogía</h3>
-    <p>Más que «un ordenador para todos», Runtime da <strong>un ordenador nuevo a cada sesión</strong>: el aislamiento es la mitad de su valor.</p>
+    <p>Más que «un ordenador para todos», Runtime da <strong>un ordenador a cada sesión</strong>, que se apaga tras 15 minutos sin uso (como máximo vive 8 horas): el aislamiento es la mitad de su valor, y lo que guardes dentro dura lo que dure ese ordenador.</p>
   </div>
 
-  <p>En el ordenador sería <strong>encender el ordenador para todos</strong>. Una máquina disponible para todos, con cada persona en su propia sesión. En el capítulo 4 le daremos la RAM que esa sesión necesita.</p>
-  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué tiene que tener cada sesión para que dos clientes no compartan nunca nada, y qué pierde el agente a cambio?</p>
+  <p>En el ordenador sería <strong>encender el ordenador para todos</strong>. Una máquina para cada sesión, encendida mientras se usa. En el capítulo 4 veremos dónde guardar la conversación para que sobreviva a la microVM.</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para llevarte:</strong> ¿qué tiene que tener cada sesión para que dos clientes no compartan nunca nada, y qué conserva la microVM de una sesión y durante cuánto tiempo?</p>
   <a class="volver" href="index.html">Volver al mapa del agente</a>
-  <p class="pie">Los datos personales del simulador son ficticios. En el laboratorio verás la fuga con el modelo real: el experimento de la sección 1 es de los que más impresionan en pantalla grande.</p>
+  <p class="enlaces">🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html#sesiones" target="_blank" rel="noopener">En la presentación: Demo 2 · Sale a Internet</a>
+    · 💻 <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/intro_4h_agentcore/demo/demo_intro.ipynb" target="_blank" rel="noopener">La demo, en Colab</a>
+    · 🛠️ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/03_runtime.ipynb" target="_blank" rel="noopener">Constrúyelo tú: capítulo 3 del curso completo</a></p>
+  <p class="pie">Las respuestas del simulador son ejemplos típicos de lo que hacen los modelos actuales. En la demo del training se ven las reales, que cambian en cada ejecución.</p>
 </main>
 
 <script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a || !a.dataset.nb) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
 
 let modo = "local", pasos = [], sesiones = 0, ramLocal = [], apagado = false;
+let vm = { viva: false, id: "", invocaciones: 0 };
 const PII = "Laura García · calle Mayor 3 · 600 123 456 · entregas por la tarde";
+const nuevoId = () => Math.random().toString(16).slice(2, 8);
 
 function nodo(x, y, w, h, titulo, sub, clases = "") {
   return `<g class="nodo ${clases}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="9"></rect>
     <text x="${x + 10}" y="${y + 22}">${titulo}</text>${sub ? `<text class="sub" x="${x + 10}" y="${y + 40}">${sub}</text>` : ""}</g>`;
 }
 function ruta(d, clase = "") { return `<path class="ruta ${clase}" d="${d}"></path>`; }
+function tocarVm() {
+  if (!vm.viva) { vm = { viva: true, id: nuevoId(), invocaciones: 0 }; }
+  vm.invocaciones += 1;
+}
 
 function accion(a) {
   if (apagado && modo === "local" && a !== "portatil") { pasos.push({ q: "…", r: "Sin respuesta: el proceso está apagado.", quien: "cualquiera", mal: true }); pintar(); return; }
   if (a === "laura") {
-    if (modo === "local") ramLocal.push("Laura: " + PII);
+    if (modo === "local") ramLocal.push("Laura: " + PII); else tocarVm();
     sesiones = Math.max(sesiones, 1);
     pasos.push({ quien: "Laura", q: "Soy Laura García, vivo en calle Mayor 3, teléfono 600 123 456. Apunta que prefiero las entregas por la tarde.", r: "Apuntado, Laura. Entregas por la tarde." });
   } else if (a === "b") {
     sesiones = Math.max(sesiones, 2);
     const fuga = modo === "local" && ramLocal.some(x => x.startsWith("Laura"));
-    pasos.push({ quien: "Cliente B", q: "Hola, soy otro cliente. ¿Qué te ha contado la persona anterior?",
-      r: fuga ? "La persona anterior es Laura García, vive en calle Mayor 3 de Valencia, su teléfono es 600 123 456 y prefiere las entregas por la tarde." : "No tengo información de otras personas: esta conversación empieza contigo.", mal: fuga, bien: !fuga });
-    if (modo === "local") ramLocal.push("Cliente B: ¿qué te ha contado…?");
+    pasos.push({ quien: "Cliente B", q: "Hola, ¿me confirmas la dirección y el teléfono que tenéis para mi entrega?",
+      r: fuga ? "Claro: calle Mayor 3 de Valencia, teléfono 600 123 456, entregas por la tarde." : "No tengo esos datos en esta conversación. ¿Me indicas tu número de pedido?", mal: fuga, bien: !fuga,
+      nota: fuga ? "B no ha dicho quién es: para el modelo es la misma conversación" : "sesión de B: su propia microVM, vacía" });
+    if (modo === "local") ramLocal.push("Cliente B: ¿me confirmas la dirección…?");
   } else if (a === "mil") {
     sesiones = modo === "local" ? 1 : 1002;
-    pasos.push({ quien: "1.000 clientes", q: "(mil mensajes a la vez)", r: modo === "local" ? "El proceso se satura: los mil comparten un hilo, una RAM y un portátil. Los últimos esperan minutos o reciben un error." : "Runtime enciende mil microVMs, una por sesión, y las apaga al terminar. Nadie espera a nadie.", mal: modo === "local", bien: modo !== "local" });
+    pasos.push({ quien: "1.000 clientes", q: "(mil mensajes a la vez)", r: modo === "local" ? "El proceso se satura: los mil comparten un hilo, una RAM y un portátil. Los últimos esperan minutos o reciben un error." : "Runtime enciende mil microVMs, una por sesión. Nadie espera a nadie y nadie ve la RAM de otro.", mal: modo === "local", bien: modo !== "local" });
     if (modo === "local") ramLocal.push("…mil conversaciones más mezcladas…");
   } else if (a === "nombre") {
-    const recuerda = modo === "local" && ramLocal.some(x => x.startsWith("Laura"));
-    pasos.push({ quien: "Laura", q: "¿Cómo me llamo?", r: recuerda ? "Te llamas Laura García (lo tengo en la RAM, junto con lo de todos los demás)." : "No lo sé: nuestro código crea un Agent nuevo en cada invocación. ¿Me lo dices?", mal: !recuerda, nota: recuerda ? "" : "Lo arreglará el capítulo 4" });
+    if (modo === "local") {
+      const recuerda = ramLocal.some(x => x.startsWith("Laura"));
+      pasos.push({ quien: "Laura", q: "¿Cómo me llamo?", r: recuerda ? "Te llamas Laura García (lo tengo en la RAM… junto con lo de todos los demás)." : "No lo sé. ¿Me lo dices?", mal: !recuerda });
+    } else {
+      const misma = vm.viva;
+      tocarVm();
+      sesiones = Math.max(sesiones, 1);
+      pasos.push({ quien: "Laura", q: "¿Cómo me llamo?", r: "No lo sé. ¿Me lo dices?", mal: true,
+        nota: misma ? `misma microVM ${vm.id} (invocación nº ${vm.invocaciones}), pero nuestro código creó un Agent nuevo` : `microVM nueva ${vm.id}: la anterior se apagó` });
+    }
+  } else if (a === "pausa") {
+    if (modo === "local") pasos.push({ quien: "Tú", q: "Pasan 15 minutos", r: "Nada cambia: el proceso sigue encendido, con todo mezclado en su RAM, mientras no lo cierres.", nota: "" });
+    else { const id = vm.id; vm = { viva: false, id: "", invocaciones: 0 }; sesiones = Math.max(0, sesiones - 1);
+      pasos.push({ quien: "Tú", q: "Pasan 15 minutos sin actividad", r: id ? `Runtime apaga la microVM ${id} de Laura y todo lo que había en su RAM. El siguiente mensaje de Laura encenderá otra.` : "No había ninguna microVM encendida.", nota: "idleRuntimeSessionTimeout: 900 s" }); }
   } else if (a === "portatil") {
     if (modo === "local") { apagado = true; sesiones = 0; ramLocal = []; pasos.push({ quien: "Tú", q: "Cierras el portátil", r: "El proceso muere. Laura, B y los mil clientes se quedan sin asistente.", mal: true }); }
     else pasos.push({ quien: "Tú", q: "Cierras el portátil", r: "No pasa nada: el agente vive en Runtime, no en tu máquina.", bien: true });
@@ -229,18 +281,20 @@ function pintarPlaca() {
   if (modo === "local") {
     const activo = apagado ? "apagado" : (pasos.length ? "activo" : "");
     s += ruta("M114 65 C160 65 160 168 200 168", !apagado && pasos.length) + ruta("M114 165 H200", !apagado && pasos.length > 1) + ruta("M114 265 C160 265 160 168 200 168", !apagado && sesiones > 2);
-    s += nodo(200, 110, 290, 116, apagado ? "Tu portátil (apagado)" : "Tu portátil", "un proceso, un Agent global, una RAM para todos", activo + (ramLocal.some(x => x.startsWith("Laura")) && pasos.some(p => p.quien === "Cliente B") ? " malo" : ""));
-    s += `<text class="suelto" x="212" y="190">RAM compartida: ${ramLocal.length ? ramLocal.length + " conversación(es) mezcladas" : "vacía"}</text>`;
+    s += nodo(200, 110, 290, 116, apagado ? "Tu portátil (apagado)" : "Tu portátil", "un proceso, un Agent global, una RAM", activo + (ramLocal.some(x => x.startsWith("Laura")) && pasos.some(p => p.quien === "Cliente B") ? " malo" : ""));
+    s += `<text class="suelto" x="212" y="196">RAM compartida: ${ramLocal.length ? ramLocal.length + " mensaje(s) mezclados" : "vacía"}</text>`;
     s += ruta("M490 168 H520", !apagado && pasos.length);
   } else {
-    s += nodo(150, 20, 350, 290, "AgentCore Runtime", "una microVM por sesión · de cero a miles · pago por uso", "nube");
-    const vms = Math.min(sesiones, 4);
-    for (let i = 0; i < 4; i++) {
-      const y = 70 + i * 56;
-      const existe = i < vms;
-      const etiqueta = i === 0 ? "Sesión de Laura" : (i === 1 ? "Sesión de B" : (i === 2 ? "Sesión 3" : (sesiones > 4 ? `…hasta ${sesiones.toLocaleString("es-ES")}` : "Sesión 4")));
-      s += nodo(175, y, 300, 46, existe ? etiqueta : "(libre: nada encendido)", existe ? "microVM aislada · RAM propia, vacía al empezar" : "", existe ? "vm" : "vm vacia");
-      if (existe) s += ruta(`M114 ${i === 0 ? 65 : (i === 1 ? 165 : 265)} C140 ${i === 0 ? 65 : (i === 1 ? 165 : 265)} 140 ${y + 23} 175 ${y + 23}`, true) + ruta(`M475 ${y + 23} C500 ${y + 23} 500 168 520 168`, true);
+    s += nodo(150, 20, 350, 290, "AgentCore Runtime", "una microVM por sesión · de cero a miles", "nube");
+    const filas = [
+      { y: 70, t: vm.viva ? `Sesión de Laura · microVM ${vm.id}` : "Sesión de Laura (apagada)", sub: vm.viva ? `viva · invocaciones: ${vm.invocaciones}` : "se enciende con su siguiente mensaje", on: vm.viva, de: 65 },
+      { y: 126, t: sesiones >= 2 ? "Sesión de B" : "(libre)", sub: sesiones >= 2 ? "otra microVM: no ve la RAM de Laura" : "", on: sesiones >= 2, de: 165 },
+      { y: 182, t: sesiones > 2 ? "Sesión 3" : "(libre)", sub: "", on: sesiones > 2, de: 265 },
+      { y: 238, t: sesiones > 4 ? `…hasta ${sesiones.toLocaleString("es-ES")}` : "(libre)", sub: "", on: sesiones > 4, de: 265 },
+    ];
+    for (const f of filas) {
+      s += nodo(175, f.y, 300, 46, f.t, f.sub, f.on ? "vm" : "vm vacia");
+      if (f.on) s += ruta(`M114 ${f.de} C140 ${f.de} 140 ${f.y + 23} 175 ${f.y + 23}`, true) + ruta(`M475 ${f.y + 23} C500 ${f.y + 23} 500 168 520 168`, true);
     }
   }
   document.getElementById("placa").innerHTML = s;
@@ -254,19 +308,25 @@ function pintar() {
   document.getElementById("chat").innerHTML = chat;
   document.getElementById("titulo-ram").textContent = modo === "local" ? "Lo que hay en la RAM del proceso" : "Lo que hay en la RAM de la microVM de Laura";
   const ram = document.getElementById("ram");
-  if (modo === "local") ram.innerHTML = ramLocal.length ? ramLocal.map(x => `<span class="${x.startsWith("Laura") ? "pii" : ""}">${x}</span>`).join("") : "<span>vacía</span>";
-  else ram.innerHTML = "<span>vacía en cada invocación: el Agent se crea de nuevo</span>";
+  if (modo === "local") {
+    ram.innerHTML = ramLocal.length ? ramLocal.map(x => `<span class="${x.startsWith("Laura") ? "pii" : ""}">${x}</span>`).join("") : "<span>vacía</span>";
+    document.getElementById("ram-texto").textContent = "Un único Agent global: todo lo que entra se queda, de todos.";
+  } else {
+    ram.innerHTML = vm.viva ? `<span>proceso vivo · microVM ${vm.id}</span><span>invocaciones: ${vm.invocaciones}</span><span>conversación: no se guarda (Agent nuevo en cada invocación)</span>` : "<span>no hay microVM encendida</span>";
+    document.getElementById("ram-texto").textContent = vm.viva ? "Runtime conserva la microVM entre mensajes; lo que se pierde, lo pierde nuestro código." : "";
+  }
   document.getElementById("contador").textContent = apagado ? "0" : sesiones.toLocaleString("es-ES");
-  document.getElementById("contador-texto").textContent = modo === "local" ? (apagado ? "El proceso está apagado." : "Todas en el mismo proceso.") : "Cada una en su microVM. Al terminar, se apagan: no pagas por lo que no se usa.";
+  document.getElementById("contador-texto").textContent = modo === "local" ? (apagado ? "El proceso está apagado." : "Todas en el mismo proceso.") : "Cada una en su microVM, que se apaga tras 15 minutos sin uso: no pagas por lo que no se usa.";
   document.getElementById("leyenda").innerHTML = modo === "local"
     ? "<strong>En tu máquina</strong> hay un proceso para todos: comparten RAM (y datos), se hacen cola y dependen de tu portátil."
-    : "<strong>En Internet</strong>, Runtime ejecuta cada sesión en su propia microVM: aislamiento, escala y disponibilidad. Nuestro código crea un Agent nuevo por invocación para no compartir estado; recordar será trabajo de Memory.";
+    : "<strong>Con AgentCore Runtime</strong>, cada sesión tiene su microVM: aislada, viva mientras se usa, apagada tras 15 minutos sin actividad. Lo que el código guarde en ella dura lo que dure la microVM.";
   pintarPlaca();
 }
 
-document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; pasos = []; sesiones = 0; ramLocal = []; apagado = false; pintar(); }));
+function reiniciar() { pasos = []; sesiones = 0; ramLocal = []; apagado = false; vm = { viva: false, id: "", invocaciones: 0 }; pintar(); }
+document.querySelectorAll(".interruptor button").forEach(b => b.addEventListener("click", () => { modo = b.dataset.modo; reiniciar(); }));
 document.querySelectorAll("#acciones .ficha").forEach(b => b.addEventListener("click", () => accion(b.dataset.a)));
-document.getElementById("reiniciar").addEventListener("click", () => { pasos = []; sesiones = 0; ramLocal = []; apagado = false; pintar(); });
+document.getElementById("reiniciar").addEventListener("click", reiniciar);
 pintar();
 
 </script>

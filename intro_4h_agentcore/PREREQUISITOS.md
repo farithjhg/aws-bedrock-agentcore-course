@@ -33,7 +33,7 @@ Hay tres perfiles, con necesidades muy distintas:
 - **Recomendado:** dos pantallas, o una grande: en una la sesión, en otra las páginas interactivas.
 
 ### Preparación opcional (10 minutos)
-Abre `teoria/index.html` (el mapa del agente), pulsa tres componentes y cambia entre «En tu máquina» y «En Internet».
+Abre [el mapa del agente](https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/teoria/index.html), pulsa tres componentes y cambia entre «🏠 En tu máquina» y «☁️ Con AWS». Si quieres, hojea la [presentación del training](https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html).
 Trae una pregunta: **¿qué te impide hoy poner un agente en producción?**
 
 ---
@@ -62,6 +62,10 @@ Para la demo:
 
 En una cuenta *sandbox*, un rol de administrador lo cubre todo.
 
+### Sin instalar nada: Google Colab
+
+La demo se puede repetir entera desde [Google Colab](https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/intro_4h_agentcore/demo/demo_intro.ipynb): la celda ☁️ instala `uv` y Terraform en la máquina de Colab, monta tu Google Drive (ahí persisten `terraform.tfvars`, el estado de Terraform y el zip del agente) y lee tus credenciales de los **Secretos** de Colab (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` si son temporales y, opcional, `AWS_REGION`). La Parte 0 del notebook despliega; la última celda apaga. Hace falta una cuenta de Google y la cuenta *sandbox* de AWS de arriba, nada más. Si prefieres tu equipo:
+
 ### Herramientas en tu máquina
 
 | Herramienta | Versión | Para qué |
@@ -76,7 +80,7 @@ En una cuenta *sandbox*, un rol de administrador lo cubre todo.
 
 ### Coste
 - **Runtime** cobra por uso activo (CPU mientras trabaja y memoria mientras la sesión vive); sin invocaciones no hay coste de cómputo.
-- **Memory** cobra por eventos guardados y registros extraídos.
+- **Memory** cobra, desde el 6 de octubre de 2026, por lo que guarda a corto plazo (por GB ingerido, con un mínimo de 12 KB por evento, recuperado y almacenado al mes) y, a largo plazo, por registro extraído al mes y por cada mil recuperaciones.
 - **El modelo** (tokens) suele ser la parte mayor.
 
 Una ejecución completa de la demo debería costar **del orden de céntimos a pocos dólares**. Es una estimación, no una medida:
@@ -96,8 +100,9 @@ Para ver las sesiones del agente en **CloudWatch → GenAI Observability**, acti
 - [ ] La cuenta cumple §2 y el perfil `eu.anthropic…` responde.
 - [ ] **Ensayo completo**: `empaquetar.py` → `apply` → notebook entero → `destroy`. Apunta los tiempos reales de cada parte y el coste.
 - [ ] **Graba en vídeo** las partes 1 y 2 del ensayo. Si algo falla en directo, pones el vídeo y sigues.
-- [ ] Publica `teoria/` en una URL estática (GitHub Pages, S3 + CloudFront, Netlify…) y prueba que abre desde otro equipo.
-- [ ] Comparte el repositorio con los asistentes.
+- [ ] Comprueba que la [presentación](https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html) y el [mapa](https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/teoria/index.html) abren desde otro equipo (GitHub Pages; se publican solos con cada *push* a `main`).
+- [ ] **Ensayo en Colab** si vas a dar la demo desde ahí: celda ☁️, Parte 0, notebook entero y apagado. Apunta cuánto tarda la Parte 0.
+- [ ] Comparte el repositorio y los enlaces con los asistentes.
 
 ### El día anterior
 - [ ] `python scripts/empaquetar.py` y `terraform -chdir=infra apply`.
@@ -108,7 +113,7 @@ Para ver las sesiones del agente en **CloudWatch → GenAI Observability**, acti
   ```
 
 ### 30 minutos antes
-- [ ] `aws sts get-caller-identity` en el terminal del notebook (las credenciales SSO caducan).
+- [ ] `aws sts get-caller-identity` en el terminal del notebook (las credenciales SSO caducan). En Colab: secretos al día y celda ☁️ ejecutada.
 - [ ] Notebook abierto con el kernel correcto y la celda de configuración ya ejecutada.
-- [ ] Pestañas listas: `teoria/index.html`, consola de AgentCore (Runtime y Memory), CloudWatch GenAI Observability.
+- [ ] Pestañas listas: la presentación (`#apertura`), el mapa del agente, consola de AgentCore (Runtime y Memory), CloudWatch GenAI Observability.
 - [ ] Un **moderador** para el chat: con 26 personas online, alguien tiene que recoger las predicciones y las preguntas.

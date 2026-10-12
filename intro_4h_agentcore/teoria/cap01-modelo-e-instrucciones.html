@@ -52,7 +52,8 @@ p { margin: 0.6rem 0; }
 .mapa-tira .actual { background: var(--led); color: var(--board); }
 .limite { background: var(--board); color: var(--silk); border-radius: 12px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
 .limite h3 { font-size: 1rem; color: var(--led); margin-bottom: 0.3rem; }
-.volver { display: inline-block; margin: 2rem 0 3rem; font: 700 1.05rem var(--display); }
+.volver { display: inline-block; margin: 2rem 0 0.6rem; font: 700 1.05rem var(--display); }
+.enlaces { margin: 0 0 3rem; font-size: 0.92rem; color: var(--ink-2); }
 .pie { color: var(--ink-2); font-size: 0.85rem; padding-bottom: 2rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -116,6 +117,14 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 .lectura th, .lectura td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 .lectura th { font-family: var(--display); font-stretch: 90%; }
 @media (max-width: 860px) { .rejilla, .paneles { grid-template-columns: 1fr !important; } }
+/* Diagramas legibles en el móvil: no se encogen por debajo de un ancho mínimo; se desplazan dentro de su panel */
+.lienzo, .panel { overflow-x: auto; }
+@media (max-width: 860px) { .lienzo svg, .panel svg { min-width: 540px; } }
+@media (max-width: 600px) { .lienzo::before { content: "↔ Desliza para ver el diagrama completo"; display: block; font-size: 0.75rem; color: var(--silk-dim); margin: 0 0 0.3rem 0.2rem; } }
+.nodo text { font-size: 15px; } .nodo text.sub, .nodo text.mini { font-size: 12px; } svg text.suelto { font-size: 12px; }
+.clave-interruptor { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--silk-dim); }
+.clave-interruptor b { color: var(--silk); }
+.sin-js { background: var(--warn); color: #2a1a05; border-radius: 10px; padding: 0.8rem 1rem; margin: 1rem auto; max-width: 72ch; font-weight: 700; }
 
 
 .rom rect.celda { fill: #24604a; stroke: var(--board-3); }
@@ -135,20 +144,22 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 </style>
 </head>
 <body>
+<div class="sin-js" id="sin-js" role="note">⚠️ Esta página es interactiva y necesita JavaScript. En JupyterLab, pulsa <b>Trust HTML</b> en la barra del visor (o ábrela en tu navegador): si no, verás los textos pero no la simulación.</div>
 <header class="portada lectura">
   <nav class="mapa-tira" aria-label="Mapa del agente"><a href="index.html" title="Ver el mapa completo">Mapa</a><span class="actual" title="Modelo e instrucciones: el razonamiento" aria-current="page">1</span><a class="" href="cap02-herramientas.html" title="Herramientas y bucle del agente: la acción">2</a><a class="" href="cap03-runtime.html" title="Entorno de ejecución: el agente como servicio">3</a><a class="" href="cap04-memoria-corto-plazo.html" title="Memoria de trabajo y a corto plazo">4</a><a class="" href="cap05-memoria-largo-plazo.html" title="Memoria a largo plazo">5</a><a class="" href="cap06-contexto-y-coste.html" title="Contexto: qué ve el modelo en cada llamada">6</a><a class="" href="cap07-mcp-gateway.html" title="Interoperabilidad de herramientas (MCP)">7</a><a class="" href="cap08-rag.html" title="Conocimiento: recuperación aumentada (RAG)">8</a><a class="" href="cap09-identidad.html" title="Identidad y delegación">9</a><a class="" href="cap10-policy-guardrails.html" title="Guardarraíles y gobernanza">10</a><a class="" href="cap11-code-interpreter.html" title="Ejecución de código (código como acción)">11</a><a class="" href="cap12-observabilidad-evaluacion.html" title="Observabilidad y evaluación">12</a><a class="" href="cap13-ab-testing.html" title="Mejora continua y experimentación">13</a><a class="" href="cap14-multiagente.html" title="Orquestación multi-agente">14</a><a class="" href="cap15-operacion.html" title="Ciclo de vida y operación">15</a></nav>
   <h1>La ROM del agente</h1>
   <p class="componente">Componente agéntico: modelo e instrucciones: el razonamiento. Capítulo 1.</p>
-  <p class="escena"><strong>Laura:</strong> «Hola, ¿dónde está mi pedido TN-1001? Dime la fecha exacta de entrega». El asistente responde con una fecha y un transportista… que se ha inventado.</p>
-  <p>Pregúntale al modelo cosas que están en su «ROM» y cosas que no pueden estar, con y sin reglas. Después, cambia el interruptor y lanza una ráfaga de llamadas para ver por dónde viaja cada una.</p>
+  <p class="escena"><strong>Laura:</strong> «¿Cuántos días tengo para devolver un producto?». El asistente responde enseguida y con seguridad: 14 días. En TiendaNova son 30.</p>
+  <p>Hazle al modelo tres preguntas: una que está en su «ROM», una que no puede estar y una que se <em>parece</em> a algo que sabe. Mira qué celda usa para responder, con y sin reglas. Después, cambia el interruptor y lanza una ráfaga de llamadas para ver por dónde viaja cada una.</p>
 </header>
 
 <section class="laboratorio" aria-label="Sonda de la ROM del modelo">
   <div class="placa">
+    <p class="clave-interruptor">🏠 <b>En tu máquina</b>: cómo lo resolverías tú, a mano · ☁️ <b>Con AWS</b>: cómo lo resuelve el servicio cuando el agente sale a Internet</p>
     <div class="cabecera-placa">
       <div class="interruptor" role="group" aria-label="Dónde vive el agente">
-        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>En tu máquina</button>
-        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>En Internet</button>
+        <button type="button" data-modo="local" aria-pressed="true"><span class="luz"></span>🏠 En tu máquina</button>
+        <button type="button" data-modo="internet" aria-pressed="false"><span class="luz"></span>☁️ Con AWS</button>
       </div>
       <div class="selector" role="group" aria-label="Instrucciones del agente">
         <span>Instrucciones:</span>
@@ -174,9 +185,9 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 
 <main class="lectura">
   <h2>Lo que acabas de ver</h2>
-  <p>El modelo es una <strong>ROM enorme</strong>: sabe redactar, razonar y muchísimo sobre el mundo, porque todo eso quedó grabado al entrenarlo. Pero es de <strong>solo lectura</strong> y se grabó antes de que existiera TiendaNova: no contiene ningún pedido, ninguna política de la empresa ni nada de lo que ha pasado hoy.</p>
-  <p>Cuando le preguntas algo que <strong>no está en la ROM</strong>, el modelo no deja un hueco: <strong>completa con lo más plausible</strong>. Una fecha, un transportista, una compensación. Suena igual de seguro que cuando sabe. Eso es una alucinación.</p>
-  <p>Las <strong>instrucciones</strong> (el <em>system prompt</em>) no añaden conocimiento: fijan el rol, el tono y los límites. Con la regla «si no dispones de un dato, dilo», el agente reconoce que no sabe. Honesto… e inútil para Laura: para saber dónde está su pedido hará falta algo más que reglas.</p>
+  <p>El modelo es una <strong>ROM enorme</strong>: sabe redactar, razonar y muchísimo sobre el mundo, incluida la normativa europea de consumo, porque todo eso quedó grabado al entrenarlo. Pero es de <strong>solo lectura</strong> y se grabó antes de que existiera TiendaNova: no contiene ningún pedido, ninguna política de la empresa ni nada de lo que ha pasado hoy.</p>
+  <p>Con las preguntas que <strong>claramente no puede saber</strong> («¿dónde está mi pedido?»), los modelos actuales suelen reconocerlo. El peligro está en las preguntas que <strong>se parecen</strong> a algo que sabe: «¿cuántos días tengo para devolver?» se parece al derecho de desistimiento europeo (14 días), y el modelo responde con esa regla general, con seguridad y bien explicada. Para TiendaNova es falsa: su política da 30. Es la alucinación más peligrosa, porque suena verificada.</p>
+  <p>Las <strong>instrucciones</strong> (el <em>system prompt</em>) no añaden conocimiento: fijan el rol, el tono y los límites. Con la regla «si no dispones de un dato concreto de TiendaNova, dilo», el agente matiza: menciona el mínimo legal y avisa de que no conoce la política de la tienda. Más prudente… y sigue sin poder decir «30 días». Eso solo llegará cuando lea las políticas de TiendaNova (capítulo 8).</p>
 
   <h2>Y al salir a Internet</h2>
   <p>En tu máquina, el modelo ya es un servicio remoto: lo llamas con una clave de API guardada en un <code>.env</code>. Con diez clientes a la vez empiezan los <strong>429</strong> (<em>throttling</em>): cada cuenta y región tiene cuotas, y si la aplicación no sabe reintentar, se cae.</p>
@@ -184,37 +195,59 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 
   <div class="limite">
     <h3>Dónde se rompe la analogía</h3>
-    <p>Una ROM devuelve exactamente lo que guarda; el modelo <strong>reconstruye</strong> su conocimiento de forma probabilística. Por eso, cuando no sabe, completa con lo plausible: alucina.</p>
+    <p>Una ROM devuelve exactamente lo que guarda; el modelo <strong>reconstruye</strong> su conocimiento de forma probabilística. Cuando una pregunta se parece a algo que sabe, responde con lo general como si fuera lo particular.</p>
   </div>
 
   <p>En el ordenador sería <strong>la ROM</strong>. Sabe mucho, es de solo lectura y no sabe nada de nosotros. En el capítulo 2 le daremos periféricos: herramientas para ver los datos reales.</p>
-  <p class="pregunta-vuelta"><strong>La pregunta para volver al notebook:</strong> ¿qué sabe el modelo de fábrica y qué no puede saber de ninguna manera, por muchas reglas que le pongas?</p>
+  <p class="pregunta-vuelta"><strong>La pregunta para llevarte:</strong> ¿qué sabe el modelo de fábrica, qué no puede saber de ninguna manera, y por qué es más peligrosa la pregunta que se parece a algo que sabe?</p>
   <a class="volver" href="index.html">Volver al mapa del agente</a>
-  <p class="pie">Las respuestas del simulador son ejemplos fijos de lo que suele hacer un modelo con y sin reglas. En el laboratorio verás las respuestas reales, que cambian en cada ejecución.</p>
+  <p class="enlaces">🎬 <a href="https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/presentacion_intro.html#demo1" target="_blank" rel="noopener">En la presentación: Demo 1 · Nace en tu máquina</a>
+    · 💻 <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/intro_4h_agentcore/demo/demo_intro.ipynb" target="_blank" rel="noopener">La demo, en Colab</a>
+    · 🛠️ <a href="https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/01_agente_simple.ipynb" target="_blank" rel="noopener">Constrúyelo tú: capítulo 1 del curso completo</a></p>
+  <p class="pie">Las respuestas del simulador son ejemplos típicos de lo que hacen los modelos actuales. En la demo del training se ven las reales, que cambian en cada ejecución.</p>
 </main>
 
 <script>
+document.getElementById("sin-js")?.remove();
+(function () {
+  var a = document.querySelector("a.volver");
+  if (!a || !a.dataset.nb) return;
+  var nb = a.dataset.nb;
+  if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
+  if (/\/files\//.test(location.pathname)) {
+    a.href = location.pathname.replace("/files/", "/lab/tree/").replace(/teoria\/[^\/]*$/, nb + ".ipynb");
+    return;
+  }
+  a.addEventListener("click", function (e) {
+    if (/colab\.|googleusercontent/.test(document.referrer) && history.length <= 1) {
+      e.preventDefault();
+      window.close();
+      setTimeout(function () { location.href = a.href; }, 300);
+    }
+  });
+})();
 
 const PREGUNTAS = [
-  { t: "¿Dónde está mi pedido TN-1001? Dime la fecha exacta.", pide: ["pedidos"],
-    sin: "Tu pedido TN-1001 salió el martes con SEUR y llegará el jueves antes de las 14:00. ¡Gracias por tu paciencia!",
-    con: "Soy Nova Assist, un asistente de inteligencia artificial. Ahora mismo no puedo consultar el estado de tu pedido: no tengo acceso a los datos de pedidos. ¿Quieres que te indique cómo verlo en «Mis pedidos»?" },
-  { t: "¿Qué diferencia hay entre un robot aspirador con mapeo láser y uno sin él?", pide: ["mundo", "lenguaje"],
+  { t: "¿Cuántos días tengo para devolver un producto?", pide: ["politicas"], usa: ["normativa"],
+    sin: "Tienes 14 días naturales desde la recepción del producto para devolverlo, sin necesidad de justificar el motivo, según la normativa europea de consumo.",
+    con: "Soy Nova Assist, un asistente de inteligencia artificial. El mínimo legal en la UE es de 14 días, pero no tengo la política de devoluciones de TiendaNova: te recomiendo confirmarlo en la web antes de decidir." },
+  { t: "¿Dónde está mi pedido TN-1001?", pide: ["pedidos"], usa: [],
+    sin: "No tengo acceso al estado de los pedidos. Puedes consultarlo en «Mis pedidos» con tu número de pedido.",
+    con: "Soy Nova Assist, un asistente de inteligencia artificial. No puedo consultar el estado de tu pedido: no tengo acceso a los datos de pedidos. ¿Quieres que te indique cómo verlo en «Mis pedidos»?" },
+  { t: "¿Qué diferencia hay entre un robot aspirador con mapeo láser y uno sin él?", pide: ["mundo"], usa: ["mundo", "lenguaje"],
     sin: "Los robots con mapeo láser (LiDAR) construyen un plano de la casa y limpian por zonas sin repetir pasadas; los que no lo tienen navegan por rebote o con cámara, y tardan más en cubrir la misma superficie.",
-    con: "Soy Nova Assist, un asistente de IA. Los robots con mapeo láser (LiDAR) construyen un plano de la casa y limpian por zonas sin repetir pasadas; los que no lo tienen navegan por rebote o con cámara, y tardan más en cubrir la misma superficie." },
-  { t: "Mi paquete llega tarde. ¿Qué compensación dais?", pide: ["politicas"],
-    sin: "Por supuesto: en TiendaNova devolvemos los gastos de envío y añadimos un cupón del 10 % en cualquier retraso superior a 24 horas.",
-    con: "Soy Nova Assist, un asistente de IA. No dispongo de la política de retrasos en este momento, así que prefiero no darte una respuesta que pueda ser incorrecta. Puedo indicarte cómo abrir una incidencia de transporte." },
+    con: "Soy Nova Assist, un asistente de IA. Los robots con mapeo láser (LiDAR) construyen un plano de la casa y limpian por zonas sin repetir pasadas; los que no lo tienen navegan por rebote o con cámara, y tardan más." },
 ];
 const CELDAS = [
   { id: "lenguaje", x: 150, y: 70, w: 150, h: 44, t: "Lenguaje y estilo", falta: false },
-  { id: "mundo", x: 310, y: 70, w: 180, h: 44, t: "Conocimiento general del mundo", falta: false },
+  { id: "mundo", x: 310, y: 70, w: 180, h: 44, t: "Conocimiento general", falta: false },
   { id: "razon", x: 150, y: 122, w: 150, h: 44, t: "Razonamiento", falta: false },
   { id: "normativa", x: 310, y: 122, w: 180, h: 44, t: "Normativa general (UE)", falta: false },
   { id: "pedidos", x: 150, y: 188, w: 150, h: 44, t: "Pedidos de TiendaNova", falta: true },
   { id: "politicas", x: 310, y: 188, w: 180, h: 44, t: "Políticas de TiendaNova", falta: true },
   { id: "hoy", x: 150, y: 240, w: 340, h: 36, t: "Lo que ha pasado hoy", falta: true },
 ];
+const tipo = p => (p.usa.length && p.pide.some(id => CELDAS.find(c => c.id === id).falta)) ? "parecido" : (p.pide.some(id => CELDAS.find(c => c.id === id).falta) ? "falta" : "sabe");
 let modo = "local", reglas = false, pregunta = 0, ultima = null, temporizadores = [];
 
 function nodo(x, y, w, h, titulo, sub, clases = "") {
@@ -227,19 +260,21 @@ function pintarRom() {
   const p = PREGUNTAS[pregunta];
   const pide = ultima ? p.pide : [];
   const falta = pide.some(id => CELDAS.find(c => c.id === id).falta);
+  const t = ultima ? tipo(p) : null;
   let s = nodo(20, 120, 110, 56, "Laura", "pregunta", ultima ? "activo" : "");
   s += ruta("M130 148 H140", !!ultima);
-  s += `<g class="rom"><rect x="140" y="40" width="360" height="248" rx="14" fill="#0b2419" stroke="${ultima ? (falta && !reglas ? "var(--bad)" : "var(--led)") : "var(--copper-dim)"}" stroke-width="2"></rect>
+  s += `<g class="rom"><rect x="140" y="40" width="360" height="248" rx="14" fill="#0b2419" stroke="${ultima ? (t === "parecido" && !reglas ? "var(--bad)" : "var(--led)") : "var(--copper-dim)"}" stroke-width="2"></rect>
         <text x="152" y="60" style="fill:var(--copper);font-size:12px">ROM: el modelo, grabado al entrenarlo</text>`;
   for (const c of CELDAS) {
-    const clase = `celda ${c.falta ? "falta" : ""} ${pide.includes(c.id) ? "pide" : ""}`;
+    const usada = ultima && p.usa.includes(c.id) && !reglas && tipo(p) === "parecido";
+    const clase = `celda ${c.falta ? "falta" : ""} ${pide.includes(c.id) || usada ? "pide" : ""}`;
     s += `<rect class="${clase}" x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="7"></rect>
           <text class="${c.falta ? "falta" : ""}" x="${c.x + 8}" y="${c.y + 26}">${c.t}</text>`;
   }
   s += "</g>";
   s += ruta("M500 148 H510", !!ultima);
-  const salida = !ultima ? ["Respuesta", ""] : (falta ? (reglas ? ["«No lo sé»", "gracias a la regla"] : ["Inventa", "completa con lo plausible"]) : ["Responde bien", "estaba en la ROM"]);
-  s += nodo(510, 120, 120, 56, salida[0], salida[1], ultima ? (falta && !reglas ? "malo" : "activo") : "");
+  const salida = !ultima ? ["Respuesta", ""] : (t === "parecido" ? (reglas ? ["Matiza", "general ≠ TiendaNova"] : ["14 días", "la regla general"]) : (t === "falta" ? ["«No lo sé»", "sabe que no sabe"] : ["Responde bien", "estaba en la ROM"]));
+  s += nodo(510, 120, 120, 56, salida[0], salida[1], ultima ? (t === "parecido" && !reglas ? "malo" : "activo") : "");
   document.getElementById("rom").innerHTML = s;
 }
 
@@ -278,12 +313,12 @@ function texto(resultado) {
 function preguntar() {
   ultima = PREGUNTAS[pregunta];
   const p = ultima;
-  const falta = p.pide.some(id => CELDAS.find(c => c.id === id).falta);
-  const clase = falta ? (reglas ? "bien" : "mal") : "bien";
+  const t = tipo(p);
+  const clase = t === "parecido" ? (reglas ? "" : "mal") : "bien";
   document.getElementById("chat").innerHTML = `<h3>La conversación</h3>
     <div class="burbuja u"><span class="quien">Laura</span>${p.t}</div>
     <div class="burbuja a ${clase}"><span class="quien">Nova Assist · ${reglas ? "con reglas" : "sin reglas"}</span>${reglas ? p.con : p.sin}</div>
-    <p class="total">${falta ? (reglas ? "Reconoce que no lo sabe: la regla funciona, pero sigue sin poder ayudar." : "Inventado con aplomo: nada de esto está en el modelo.") : "Correcto: esto sí está en la ROM del modelo."}</p>`;
+    <p class="total">${t === "parecido" ? (reglas ? "Matiza y avisa: más prudente, pero sigue sin poder decir «30 días»." : "Con aplomo y bien explicado… y falso para TiendaNova: ha usado la regla general europea en lugar de la política de la tienda, que no tiene.") : (t === "falta" ? "Reconoce que no puede saberlo: la pregunta no se parece a nada que sepa." : "Correcto: esto sí está en la ROM del modelo.")}</p>`;
   pintarRom();
   leyenda();
 }
@@ -291,10 +326,10 @@ function preguntar() {
 function leyenda() {
   let l = modo === "local"
     ? "<strong>En tu máquina</strong> el modelo ya es remoto: lo llamas con una clave de API. Funciona… hasta que llegan muchos clientes a la vez."
-    : "<strong>En Internet</strong> el agente llama a Bedrock con su rol IAM, a través del perfil <code>eu.</code>, con reintentos adaptativos y sin sacar los datos de la UE.";
+    : "<strong>Con AWS</strong>, el agente llama a Bedrock con su rol IAM, a través del perfil <code>eu.</code>, con reintentos adaptativos y sin sacar los datos de la UE.";
   if (ultima) {
-    const falta = ultima.pide.some(id => CELDAS.find(c => c.id === id).falta);
-    l = (falta ? (reglas ? "<strong>Honesto e inútil.</strong> Las reglas evitan la invención, pero no aportan datos. " : "<strong>Alucinación.</strong> Lo que falta en la ROM se rellena con lo plausible. ") : "<strong>Estaba en la ROM.</strong> El conocimiento general sí lo tiene. ") + l;
+    const t = tipo(ultima);
+    l = (t === "parecido" ? (reglas ? "<strong>Prudente, pero sin el dato.</strong> Las reglas cambian cómo responde; no le dan las políticas de TiendaNova. " : "<strong>Lo parecido ocupa el hueco.</strong> Lo que falta en la ROM se rellena con lo que más se le parece. ") : (t === "falta" ? "<strong>Sabe que no sabe.</strong> " : "<strong>Estaba en la ROM.</strong> El conocimiento general sí lo tiene. ")) + l;
   }
   document.getElementById("leyenda").innerHTML = l;
 }
