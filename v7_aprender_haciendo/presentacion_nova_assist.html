@@ -35,6 +35,8 @@ button{font:inherit;color:inherit}
 .rail .act{font:700 10px/1 var(--display);letter-spacing:.16em;color:var(--silk-faint);margin:0 4px 0 10px;text-transform:uppercase}
 .rail button{width:24px;height:24px;border-radius:5px;border:1px solid var(--line);background:rgba(255,255,255,.03);font:600 11px/1 var(--mono);color:var(--silk-dim);cursor:pointer;padding:0}
 .rail button.seen{border-color:var(--copper-dim);color:var(--copper-hi)}
+.rail.blocks{gap:6px}
+.rail.blocks button{width:auto;padding:0 10px;font:700 11px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 .rail button.cur{background:var(--led);color:#1d1a05;border-color:var(--led);box-shadow:0 0 14px rgba(245,213,71,.5)}
 .debts{display:flex;gap:5px;align-items:center}
 .debts .dl{font:700 10px/1 var(--display);letter-spacing:.16em;color:var(--silk-faint);text-transform:uppercase;margin-right:4px;white-space:nowrap}
@@ -608,7 +610,7 @@ const EDGES = [
   ['nw_obs','novaweb','obs',[[1080,710],[1080,654]],13],
 ].map(([id,a,b,pts,ch,max,local]) => ({id,a,b,pts,ch,max:max ?? null,local:!!local}));
 
-const DEBTS = {
+let DEBTS = {
   D0:'Responde con lo de fábrica, no con las políticas de TiendaNova',
   D1:'Un cliente puede ver pedidos de otro',
   D2:'Nada limita los reembolsos',
@@ -634,7 +636,7 @@ const ALLOFF = ['runtime','vmA','vmB','vmC'];
 const REPO = 'farithjhg/aws-bedrock-agentcore-course', RAMA = 'main', CARPETA = 'v7_aprender_haciendo';
 const PAGES = `https://farithjhg.github.io/aws-bedrock-agentcore-course/${CARPETA}`;
 const GITHUB = `https://github.com/${REPO}`;
-const URL_ = {
+let URL_ = {
   colab: nb => `https://colab.research.google.com/github/${REPO}/blob/${RAMA}/${CARPETA}/labs/${nb.replace(/\.ipynb$/, '')}.ipynb`,
   teoria: f => `${PAGES}/labs/${f}`,
   mapa: `${PAGES}/labs/teoria/index.html`,
@@ -673,6 +675,22 @@ const REQS = [
   ['Calidad medida y cambios sin romper', [12, 13, 15], 'Evaluations · A/B · endpoints prod y pre', null, true],
   ['Resistir instrucciones maliciosas', [5, 8, 10], 'Linaje en Iceberg · Policy · Guardrails', 'parcial: falta prevenir en la ingesta (D8)', true],
 ];
+// Lámina «Antes de empezar»: [subtítulo, filas]
+let GOALS = {
+  objetivos: ['al terminar el curso', [
+    ['Construir', 'un agente con Strands y llevarlo a producción con AgentCore, pieza a pieza.'],
+    ['Explicar', 'por qué existe cada pieza: qué escena la justifica y qué falla sin ella.'],
+    ['Gobernar', 'lo que hace: identidad, límites deterministas, coste por conversación y calidad medida.'],
+    ['Diseñar', 'sin guion: elegir las piezas que pide una escena nueva.']]],
+  publico: ['dos públicos, una historia', [
+    ['Quien construye', 'Desarrolladores, arquitectos y equipos de plataforma o de datos que van a poner agentes en producción. Hacen los 18 laboratorios.'],
+    ['Quien decide', 'Dirección técnica y de producto. Le basta esta presentación: la historia, la arquitectura completa, el balance de riesgos y lo que cuesta.']]],
+  requisitos: ['antes del capítulo 0', [
+    ['Saber:', 'Python intermedio y nociones de AWS (IAM, S3, Lambda). No hace falta haber construido agentes.'],
+    ['Cuenta:', 'una cuenta sandbox de AWS por persona, con presupuesto y cuotas de Bedrock revisadas.'],
+    ['Equipo:', 'un navegador y una cuenta de Google para Colab. En local: Python 3.10+, Node.js 20+ y JupyterLab.'],
+    ['Tiempo:', '3,5 días, con las paradas ✋ y 🧭 dentro de cada capítulo.']]],
+};
 const ACTS = [[0, 0, 'Antes de empezar'], [1, 2, 'Acto I · Nace un agente'], [3, 11, 'Acto II · Sale a Internet'], [12, 15, 'Acto III · Crece y se opera'], [16, 17, 'Epílogo']];
 // ───────────────────────── La historia, escena a escena ─────────────────────────
 const LOCAL = ['nb','agent','laura','bedrock'];
@@ -1256,23 +1274,26 @@ const narrow = () => matchMedia('(max-width: 900px)').matches;
 
 // ── Enlaces: Colab, teoría, escenas
 const A = (href, cls, html, title) => `<a class="${cls}" href="${href}" target="_blank" rel="noopener"${title ? ` title="${esc(title)}"` : ''}>${html}</a>`;
-function linksOf(sc) {
+function linksOf(sc, b) {
+  const pg = (b != null && sc.beats[b] && sc.beats[b].page) || sc.page;
+  if (sc.links) return Object.assign({colab: null, teoria: null, tt: ''}, sc.links, pg && pg.f ? {teoria: URL_.teoria(pg.f), tt: pg.t} : {});
   if (sc.ch == null) return null;
-  return {colab: sc.nb ? URL_.colab(sc.nb) : null, teoria: sc.page && sc.page.f ? URL_.teoria(sc.page.f) : null, tt: sc.page ? sc.page.t : ''};
+  return {colab: sc.nb ? URL_.colab(sc.nb) : null, teoria: pg && pg.f ? URL_.teoria(pg.f) : null, tt: pg ? pg.t : ''};
 }
-function goLinks(sc) {
-  const L = linksOf(sc);
+function goLinks(sc, b) {
+  const L = linksOf(sc, b);
   if (!L) return '';
-  let h = `<nav class="golinks" aria-label="Abrir el capítulo ${sc.ch}">`;
-  if (L.colab) h += A(L.colab, 'gl colab', `<i aria-hidden="true">▶</i> Abrir en Colab`, `${sc.nb} en Google Colab (tecla C)`);
-  if (L.teoria) h += A(L.teoria, 'gl teo', `<i aria-hidden="true">🧭</i> Teoría`, `${L.tt} (tecla T)`);
+  let h = `<nav class="golinks" aria-label="Abrir ${sc.ch != null ? 'el capítulo ' + sc.ch : 'los materiales'}">`;
+  if (L.colab) h += A(L.colab, 'gl colab', `<i aria-hidden="true">▶</i> ${esc(L.cl || 'Abrir en Colab')}`, `${sc.nb || ''} en Google Colab (tecla C)`);
+  if (L.teoria) h += A(L.teoria, 'gl teo', `<i aria-hidden="true">🧭</i> ${esc(L.tl || 'Teoría')}`, `${L.tt} (tecla T)`);
+  if (L.extra) L.extra.forEach(([href, txt, title]) => { h += A(href, 'gl', esc(txt), title || txt); });
   return h + `</nav>`;
 }
 function openLink(kind) {
-  const L = linksOf(SCENES[state.s]), url = L && L[kind];
+  const L = linksOf(SCENES[state.s], state.b), url = L && L[kind];
   if (url) { try { window.open(url, '_blank', 'noopener'); } catch (_) {} }
 }
-const hashOf = sc => sc.ch != null ? 'cap' + pad2(sc.ch) : sc.id;
+const hashOf = sc => sc.hash || (sc.ch != null && typeof RAIL === 'undefined' ? 'cap' + pad2(sc.ch) : sc.id);
 function sceneFromHash(h) {
   h = String(h || '').replace(/^#/, '');
   let m = /^e(\d{1,2})$/.exec(h);
@@ -1331,7 +1352,16 @@ function build() {
   }
   // Raíl de capítulos
   const rail = $('#rail'), acts = {1:'I', 3:'II', 12:'III', 16:'+'};
-  for (let n = 0; n <= 17; n++) {
+  if (typeof RAIL !== 'undefined') {
+    // Bloques (la intro): cada botón lleva a la primera escena de su bloque
+    rail.classList.add('blocks');
+    RAIL.forEach(([label, id], i) => {
+      const b = document.createElement('button');
+      b.textContent = label; b.dataset.blk = i; b.title = label;
+      b.addEventListener('click', () => { const k = SCENES.findIndex(sc => sc.id === id); if (k >= 0) go(k, 0); });
+      rail.append(b);
+    });
+  } else for (let n = 0; n <= 17; n++) {
     if (acts[n]) { const a = document.createElement('span'); a.className = 'act'; a.textContent = acts[n]; rail.append(a); }
     const b = document.createElement('button');
     b.textContent = n; b.dataset.ch = n; b.title = 'Capítulo ' + n;
@@ -1341,6 +1371,7 @@ function build() {
   // Cuaderno de deudas
   const dbx = $('#debts');
   for (const k in DEBTS) { const p = document.createElement('span'); p.className = 'pill'; p.id = 'p-' + k; p.textContent = k; p.title = k + ' · ' + DEBTS[k]; dbx.append(p); }
+  if (!Object.keys(DEBTS).length) dbx.hidden = true;
   // Progreso e índice
   const prog = $('#prog'), grid = $('#grid');
   SCENES.forEach((sc, i) => {
@@ -1350,16 +1381,16 @@ function build() {
     const g = document.createElement('button');
     g.innerHTML = `<span class="n">${pad2(i + 1)}</span><span class="t">${esc(sc.title)}</span><span class="k">${esc(sc.kick)}</span>`;
     g.addEventListener('click', () => { closeIndex(); go(i, 0); }); tile.append(g);
-    const L = linksOf(sc);
+    const L = linksOf(sc, 0);
     if (L && (L.colab || L.teoria)) {
       const lk = document.createElement('div'); lk.className = 'lk';
-      lk.innerHTML = (L.colab ? A(L.colab, '', '▶ Colab', sc.nb) : '') + (L.teoria ? A(L.teoria, '', '🧭 Teoría', L.tt) : '');
+      lk.innerHTML = (L.colab ? A(L.colab, '', '▶ ' + (L.cl ? esc(L.cl) : 'Colab'), sc.nb || L.cl) : '') + (L.teoria ? A(L.teoria, '', '🧭 Teoría', L.tt) : '');
       tile.append(lk);
     }
     grid.append(tile);
   });
-  $('#ovlinks').innerHTML = [A(URL_.repo, '', 'Repositorio en GitHub'), A(URL_.mapa, '', 'El mapa del agente'),
-    A(URL_.guia, '', 'Guía del formador'), A(URL_.doc, '', 'Documento técnico')].join(' · ');
+  $('#ovlinks').innerHTML = (URL_.indice || [[URL_.repo, 'Repositorio en GitHub'], [URL_.mapa, 'El mapa del agente'],
+    [URL_.guia, 'Guía del formador'], [URL_.doc, 'Documento técnico']]).map(([u, t]) => A(u, '', t)).join(' · ');
   // Tira laboratorio → teoría
   ORDER.forEach(k => { const d = document.createElement('div'); d.className = 'st5'; d.dataset.k = k; d.innerHTML = `<span class="sl">${ST[k][0]} ${ST[k][1]}</span><span class="sd"></span>`; strip.append(d); });
 }
@@ -1604,7 +1635,7 @@ function renderPanel(sc, b, changed) {
         `<h3 class="fh">${esc(bt.h)}</h3><p class="ft">${esc(bt.t)}</p>`;
   } else {
     if (sc.ch != null) h += `<span class="wm" aria-hidden="true">${pad2(sc.ch)}</span>`;
-    h += `<p class="kick">${esc(sc.kick)}</p><h1 class="title">${esc(sc.title)}</h1>` + goLinks(sc);
+    h += `<p class="kick">${esc(sc.kick)}</p><h1 class="title">${esc(sc.title)}</h1>` + goLinks(sc, b);
     if (sc.quote) h += `<blockquote class="quote"><span class="who">${esc(sc.quote.who)}</span>${esc(sc.quote.text)}</blockquote>`;
     h += `<ol class="beats">` + sc.beats.slice(0, b + 1).map((x, j) => beatHTML(sc, x, j, b, j === b && !RM)).join('') + `</ol>`;
     if (sc.comp && sc.beats.slice(0, b + 1).some(x => x.st === 'teoria')) h += `<div class="comp"><span class="cl">La pieza</span><b>${esc(sc.comp.c)}</b><i>→</i><b>${esc(sc.comp.aws)}</b></div>`;
@@ -1628,8 +1659,9 @@ function renderStrip(sc, b) {
     idx = ORDER.indexOf(bt.st);
     if (bt.st === 'info') idx = b === sc.beats.length - 1 ? 4 : 2;
   }
-  const det = {lab: sc.nb || 'el notebook', pred: 'la apuesta', run: 'la celda', check: 'con código', teoria: sc.page ? sc.page.t : 'la página'};
-  const L = linksOf(sc);
+  const pg = (bt && bt.page) || sc.page;
+  const det = {lab: sc.nb || 'el notebook', pred: 'la apuesta', run: 'la celda', check: 'con código', teoria: pg ? pg.t : 'la página'};
+  const L = linksOf(sc, b);
   [...strip.querySelectorAll('.st5')].forEach((el, i) => {
     const k = ORDER[i], sd = el.querySelector('.sd'), url = L && (k === 'lab' ? L.colab : k === 'teoria' ? L.teoria : null);
     if (url) sd.innerHTML = A(url, '', esc(det[k]) + ' ↗', k === 'lab' ? 'Abrir en Google Colab' : 'Abrir la página de teoría');
@@ -1658,7 +1690,11 @@ function debtsAt(s, b) {
 }
 function renderChrome(s, b) {
   const sc = SCENES[s];
-  document.querySelectorAll('#rail button').forEach(x => {
+  if (typeof RAIL !== 'undefined') {
+    const starts = RAIL.map(([, id]) => SCENES.findIndex(q => q.id === id));
+    let cur = -1; starts.forEach((st, i) => { if (st >= 0 && st <= s) cur = i; });
+    document.querySelectorAll('#rail button').forEach((x, i) => { x.classList.toggle('cur', i === cur); x.classList.toggle('seen', i < cur); });
+  } else document.querySelectorAll('#rail button').forEach(x => {
     const n = +x.dataset.ch;
     x.classList.toggle('cur', sc.ch === n);
     const maxCh = Math.max(-1, ...SCENES.slice(0, s + 1).map(q => q.ch ?? -1));
@@ -1770,20 +1806,11 @@ Object.assign(ALT, {
     const col = (i, ic, h, sub, body) => `<section class="gcol" data-i="${i}"><header><span class="gi" aria-hidden="true">${ic}</span>` +
       `<div><h3>${h}</h3><p>${sub}</p></div></header>${body}</section>`;
     const li = a => `<ul>${a.map(([b, t]) => `<li><b>${b}</b> ${t}</li>`).join('')}</ul>`;
+    const G = GOALS;
     return `<div class="goals">` +
-      col(0, '🎯', 'Objetivos', 'al terminar el curso', li([
-        ['Construir', 'un agente con Strands y llevarlo a producción con AgentCore, pieza a pieza.'],
-        ['Explicar', 'por qué existe cada pieza: qué escena la justifica y qué falla sin ella.'],
-        ['Gobernar', 'lo que hace: identidad, límites deterministas, coste por conversación y calidad medida.'],
-        ['Diseñar', 'sin guion: elegir las piezas que pide una escena nueva.']])) +
-      col(1, '👥', 'Para quién', 'dos públicos, una historia',
-        `<div class="aud"><b>Quien construye</b><span>Desarrolladores, arquitectos y equipos de plataforma o de datos que van a poner agentes en producción. Hacen los 18 laboratorios.</span></div>` +
-        `<div class="aud"><b>Quien decide</b><span>Dirección técnica y de producto. Le basta esta presentación: la historia, la arquitectura completa, el balance de riesgos y lo que cuesta.</span></div>`) +
-      col(2, '🧰', 'Qué hace falta', 'antes del capítulo 0', li([
-        ['Saber:', 'Python intermedio y nociones de AWS (IAM, S3, Lambda). No hace falta haber construido agentes.'],
-        ['Cuenta:', 'una cuenta sandbox de AWS por persona, con presupuesto y cuotas de Bedrock revisadas.'],
-        ['Equipo:', 'un navegador y una cuenta de Google para Colab. En local: Python 3.10+, Node.js 20+ y JupyterLab.'],
-        ['Tiempo:', '3,5 días, con las paradas ✋ y 🧭 dentro de cada capítulo.']])) +
+      col(0, '🎯', 'Objetivos', G.objetivos[0], li(G.objetivos[1])) +
+      col(1, '👥', 'Para quién', G.publico[0], G.publico[1].map(([b, t]) => `<div class="aud"><b>${b}</b><span>${t}</span></div>`).join('')) +
+      col(2, '🧰', 'Qué hace falta', G.requisitos[0], li(G.requisitos[1])) +
       `</div>`;
   },
   story() {
