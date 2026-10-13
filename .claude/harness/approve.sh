@@ -4,7 +4,7 @@ set -euo pipefail
 cd "${CLAUDE_PROJECT_DIR:-$PWD}"
 [ -x .harness/dod.sh ] || [ -f .harness/dod.sh ] || { echo "no .harness/dod.sh"; exit 1; }
 [ -f .harness/GOAL.md ] || { echo "no .harness/GOAL.md"; exit 1; }
-if grep -q $'\r' .harness/dod.sh; then
+if ! tr -d '\r' < .harness/dod.sh | cmp -s - .harness/dod.sh; then   # not grep: Git for Windows grep strips \r
   echo "dod.sh has CRLF line endings; bash will fail on it. Convert to LF and re-run approve.sh."; exit 1
 fi
 chmod +x .harness/dod.sh

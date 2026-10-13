@@ -1,0 +1,12 @@
+# Harness runtime state (GOAL.md, PLAN.md, STATUS.md and dod.sh stay tracked as the spec trail)
+.harness/active
+.harness/attempts
+.harness/.approved
+.harness/dod.log
+.harness/gate.last
+
+# Claude Code personal settings
+.claude/settings.local.json
+
+# Local Python environment
+.venv/

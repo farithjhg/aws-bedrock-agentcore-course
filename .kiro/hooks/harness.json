@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Harness guard",
+      "trigger": "PreToolUse",
+      "matcher": "fs_write|str_replace|fs_append|delete_file|execute_bash|move|rename",
+      "action": { "type": "command", "command": "bash .claude/harness/guard.sh" }
+    },
+    {
+      "name": "Harness resume",
+      "trigger": "SessionStart",
+      "action": { "type": "command", "command": "bash .claude/harness/resume.sh" }
+    },
+    {
+      "name": "Harness turn",
+      "trigger": "UserPromptSubmit",
+      "action": { "type": "command", "command": "bash .claude/harness/turn.sh" }
+    },
+    {
+      "name": "Harness gate (advisory)",
+      "trigger": "Stop",
+      "action": { "type": "command", "command": "bash .claude/harness/gate.sh" }
+    }
+  ]
+}
