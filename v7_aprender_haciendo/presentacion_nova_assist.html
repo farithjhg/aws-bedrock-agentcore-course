@@ -658,7 +658,7 @@ const NEED = {
   17:'Que nada del laboratorio siga facturando',
 };
 const PIECE = {
-  0:'S3 Tables · Athena', 1:'Bedrock · perfil eu.', 2:'Herramientas (aún en local)', 3:'Runtime · microVM por sesión', 4:'Memory · corto plazo',
+  0:'Terraform · S3 Tables · Athena', 1:'Bedrock · perfil eu.', 2:'Herramientas (aún en local)', 3:'Runtime · microVM por sesión', 4:'Memory · corto plazo',
   5:'Memory · largo plazo', 6:'Caché del prefijo · ventana', 7:'Gateway (MCP) · Lambda', 8:'S3 Vectors · Iceberg', 9:'Identity · Cognito',
   10:'Policy (Cedar) · Guardrails', 11:'Code Interpreter', 12:'Observability · Evaluations', 13:'Bundles · A/B en el Gateway',
   14:'Multiagente · Web Search', 15:'Versiones · endpoints', 16:'Las que la escena pida', 17:'Inventario vacío',
@@ -785,11 +785,11 @@ const SCENES = [
  kick:'Capítulo 0 · El terreno', title:'La cuenta y los datos de TiendaNova',
  nb:'00_configuracion_cuenta_aws.ipynb', page:{f:'teoria/index.html', t:'El mapa del agente'},
  quote:{who:'Escena', text:'Antes de que Laura escriba, TiendaNova ya tiene sus pedidos, sus clientes y sus devoluciones en una plataforma de datos.'},
- comp:{c:'El terreno', aws:'Cuenta sandbox · S3 Tables (Iceberg) · Athena'},
+ comp:{c:'El terreno', aws:'Terraform (infra/cuenta) · S3 Tables (Iceberg) · Athena'},
  focus:['nb','athena','iceberg','cognito'],
- notes:'La Parte A la hace el administrador el día anterior (Transaction Search tarda). Partes B y C en clase. La consulta de C5 instala el hábito de apostar antes de ejecutar.',
+ notes:'La Parte A es un terraform apply por cuenta (infra/cuenta), el día anterior: presupuesto, Transaction Search, catálogo y plataforma de datos; terraform destroy lo deshace. Si una SCP bloquea Transaction Search, observabilidad = false y se pierden los capítulos 12, 13 y 15. Partes B y C en clase; terreno() comprueba lo que hizo el administrador. La consulta de C5 instala el hábito de apostar antes de ejecutar.',
  beats:[
-  {st:'lab', h:'Laboratorio', t:'El administrador prepara la cuenta: presupuesto, Transaction Search y CDK. Cada participante verifica su equipo, el perfil eu. del modelo y sus cuotas, y carga los datos en Iceberg.',
+  {st:'lab', h:'Laboratorio', t:'El administrador prepara el terreno con un terraform apply por cuenta: presupuesto, Transaction Search, catálogo y plataforma de datos. Cada participante verifica su equipo, el perfil eu. del modelo y sus cuotas, y carga los datos en Iceberg.',
    flow:[f('nb_ice','pedidos · clientes · devoluciones','data'), f('nb_ice','7 políticas · 26 casos','data')]},
   {st:'pred', h:'Predice', t:'¿Cuántos estados de pedido hay en TiendaNova y cuál es el más frecuente?'},
   {st:'run', h:'Ejecuta', t:'Athena consulta las tablas Iceberg recién creadas, con SQL.',

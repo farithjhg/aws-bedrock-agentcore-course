@@ -1,0 +1,7 @@
+# Copia este archivo como terraform.tfvars y rellénalo (uno por cuenta sandbox).
+region          = "eu-west-1"
+cuenta_esperada = "123456789012"          # ← la cuenta sandbox: protege contra aplicar en la equivocada
+presupuesto_usd = 50
+email_alertas   = "formador@empresa.com"  # ← alertas al 50 %, 80 % y 100 % previsto
+observabilidad  = true                    # false si una SCP bloquea Transaction Search (capítulos 12, 13 y 15)
+etiquetas_coste = false                   # true en un segundo apply, cuando la CLI ya haya desplegado algo

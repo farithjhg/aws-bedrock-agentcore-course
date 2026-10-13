@@ -14,7 +14,7 @@
 | 1:35–2:20 | 💻 Demo 2 · Sale a Internet | Notebook, parte 2 · `infra/main.tf` · `cap03`, `cap04`, `cap05` · escenas `#terraform`, `#sesiones`, `#memoria` |
 | 2:20–3:05 | 🗺️ El resto del catálogo | `cap07`–`cap15` · escenas `#catalogo-herramientas`, `#catalogo-control`, `#catalogo-operacion`, `#martes` |
 | 3:05–3:15 | *Descanso* | |
-| 3:15–3:40 | Coste, operación y decisión | Notebook, parte 3 · `cap06` · consola · escenas `#coste`, `#decision` |
+| 3:15–3:40 | Coste, operación y decisión | Notebook, parte 3 · `cap06` · consola (GenAI Observability solo si `infra/cuenta` se aplicó con `observabilidad = true`) · escenas `#coste`, `#decision` |
 | 3:40–4:00 | Preguntas y siguiente paso | `README.md` · escena `#siguiente` |
 
 **Margen:** la agenda tiene unos 10 minutos de holgura repartidos. Si vas tarde, recorta el catálogo (bloque 2:20), nunca las demos.
@@ -83,7 +83,7 @@ Menciona también, sin página: **Registry** (catálogo de agentes y herramienta
 
 ## 3:15–3:40 · Coste, operación y decisión
 - Ejecuta el taxímetro del notebook: tokens reales de la demo. Abre `cap06`: el contexto crece en cada turno y el coste con él.
-- Consola: el Runtime y sus versiones; la Memory y los registros de Laura; CloudWatch GenAI Observability, si está activado.
+- Consola: el Runtime y sus versiones; la Memory y los registros de Laura; CloudWatch GenAI Observability, si el terreno de la cuenta se aplicó con `observabilidad = true` (`infra/cuenta`).
 - **¿Cuándo AgentCore?** Cuando necesitas aislamiento por sesión, memoria gestionada, identidad y políticas sin construirlas tú.
   **¿Cuándo no?** Un prototipo interno de un solo usuario, o si ya tienes esa plataforma montada (ECS/Lambda + tu propia memoria).
 - Apaga en directo: la última celda del notebook ejecuta `terraform destroy` (pide escribir DESTRUIR), o `terraform -chdir=infra destroy` en un terminal. La IaC también sirve para apagar.

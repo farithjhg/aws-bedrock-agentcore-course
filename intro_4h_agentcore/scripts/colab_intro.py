@@ -39,7 +39,8 @@ BIN = Path("/content/bin")
 REGION_POR_DEFECTO = "eu-west-1"
 SECRETOS = ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "AWS_REGION")
 # Lo que persiste entre sesiones de Colab (rutas relativas a la raíz de la intro)
-PERSISTE = ("infra/terraform.tfvars", "infra/terraform.tfstate", "infra/terraform.tfstate.backup", "build/agent.zip")
+PERSISTE = ("infra/terraform.tfvars", "infra/terraform.tfstate", "infra/terraform.tfstate.backup", "build/agent.zip",
+            "infra/cuenta/terraform.tfstate", "infra/cuenta/terraform.tfstate.backup")
 
 _MARCAS = Path("/content/.nova_intro")
 
@@ -98,7 +99,7 @@ def guardar_en_drive() -> int:
             destino.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(origen, destino)
             copiados += 1
-        elif destino.exists() and rel.startswith("infra/terraform.tfstate"):
+        elif destino.exists() and "terraform.tfstate" in rel:
             destino.unlink()   # el estado ya no existe (p. ej. tras destroy): tampoco en Drive
     return copiados
 

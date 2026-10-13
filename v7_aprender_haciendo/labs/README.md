@@ -8,7 +8,7 @@ TiendaNova, un e-commerce ficticio, necesita un asistente de postventa. Cada cap
 
 ## Puesta en marcha
 
-Requisitos comunes: acceso a **tu propia cuenta *sandbox*** (una por participante) y cuotas de Bedrock suficientes para el modelo (capítulo 0, B5b).
+Requisitos comunes: acceso a **tu propia cuenta *sandbox*** (una por participante), con **el terreno ya preparado por el administrador** (`terraform apply` en [`../infra/cuenta`](../infra/cuenta/README.md): presupuesto, Transaction Search, catálogo y plataforma de datos; es la Parte A del capítulo 0) y cuotas de Bedrock suficientes para el modelo (capítulo 0, B5b). Tú no necesitas Terraform: `terreno()` encuentra lo que creó.
 
 ### Opción A · Google Colab (sin instalar nada)
 
@@ -38,7 +38,7 @@ npm install -g @aws/agentcore@0.31.1   # la versión con la que se probó el cur
 jupyter lab
 ```
 
-- Empieza por `00_configuracion_cuenta_aws.ipynb` y **ejecuta siempre los notebooks desde esta carpeta**. La celda ☁️ no hace nada fuera de Colab.
+- Empieza por `00_configuracion_cuenta_aws.ipynb` (Partes B y C; la A es el `terraform apply` del administrador) y **ejecuta siempre los notebooks desde esta carpeta**. La celda ☁️ no hace nada fuera de Colab.
 - **Windows:** si PowerShell no deja activar el entorno, `Set-ExecutionPolicy -Scope Process RemoteSigned`. La CLI se instala como `agentcore.cmd`; los notebooks la llaman con `cli()` y `cli_args()`, que la encuentran solos y funcionan igual en los tres sistemas. El servidor MCP local del capítulo 7 se lanza como proceso aparte por la misma razón.
 
 ### En los dos casos
@@ -51,7 +51,7 @@ jupyter lab
 
 | Notebook (abre en Colab) | Capítulo | La necesidad | Teoría (🧭) |
 |---|---|---|---|
-| [`00_configuracion_cuenta_aws`](https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/00_configuracion_cuenta_aws.ipynb) | 0 · El terreno | Cuenta, presupuesto, cuotas, observabilidad y los datos de TiendaNova en Iceberg | [`teoria/index.html`](https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/labs/teoria/index.html) (el mapa) |
+| [`00_configuracion_cuenta_aws`](https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/00_configuracion_cuenta_aws.ipynb) | 0 · El terreno | El terreno con Terraform (presupuesto, observabilidad, plataforma de datos), el equipo, las cuotas y los datos de TiendaNova en Iceberg | [`teoria/index.html`](https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/labs/teoria/index.html) (el mapa) |
 | [`01_agente_simple`](https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/01_agente_simple.ipynb) | 1 · El agente que sabe… lo que no es | Que no conteste con la regla general en lugar de la de TiendaNova | [`teoria/cap01-modelo-e-instrucciones.html`](https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/labs/teoria/cap01-modelo-e-instrucciones.html) |
 | [`02_herramientas`](https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/02_herramientas.ipynb) | 2 · El agente que no ve tus datos | Acceso a los pedidos | [`teoria/cap02-herramientas.html`](https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/labs/teoria/cap02-herramientas.html) |
 | [`03_runtime`](https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/03_runtime.ipynb) | 3 · Del portátil a la nube | Disponible y aislado para miles de clientes | [`teoria/cap03-runtime.html`](https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/labs/teoria/cap03-runtime.html) |
@@ -81,6 +81,9 @@ El componente de cada capítulo, si funciona en local y por qué AWS al salir a 
 ## Organización
 
 ```text
+infra/
+├── cuenta/                 # Terraform: el terreno de cada cuenta sandbox (Parte A del capítulo 0); terraform apply / destroy
+└── modulos/cuenta/         # el módulo, compartido con la intro de 4 horas
 labs/
 ├── README.md, requirements.txt, .gitignore
 ├── lab_utils.py            # estado, CLI, invocación, comprobaciones, taxímetro, cuaderno, Iceberg/Athena, Gateway, Memory, limpieza
@@ -97,7 +100,7 @@ labs/
 └── NovaAssist/             # proyecto de la AgentCore CLI (capítulo 3); NovaAgent y NovaWeb (capítulo 13)
 ```
 
-**Datos.** El capítulo 0 carga en **S3 Tables (Apache Iceberg)** las tablas `clientes`, `productos`, `pedidos`, `lineas_pedido`, `envios_eventos`, `devoluciones`, `documentos` y `eval_casos`. El capítulo 8 crea `chunks`, el 12 `eval_retrieval` y el 14 `informes`. El índice vectorial vive en **S3 Vectors** desde el capítulo 8.
+**Datos.** El *table bucket* y el namespace los crea Terraform (`infra/cuenta`); el capítulo 0 carga en **S3 Tables (Apache Iceberg)** las tablas `clientes`, `productos`, `pedidos`, `lineas_pedido`, `envios_eventos`, `devoluciones`, `documentos` y `eval_casos`. El capítulo 8 crea `chunks`, el 12 `eval_retrieval` y el 14 `informes`. El índice vectorial vive en **S3 Vectors** desde el capítulo 8.
 
 ## Versiones probadas
 
@@ -122,7 +125,8 @@ labs/
 | `AccessDenied` en `InvokeModel` | Faltan permisos sobre el perfil o sus modelos de destino | Doc §2.4; revisa las SCP |
 | `agentcore` no responde | Lo oculta el *starter toolkit* de pip, o el `PATH` de npm | `pip uninstall bedrock-agentcore-starter-toolkit`; terminal nueva |
 | Una opción de la CLI no existe | Otra versión de la CLI | `agentcore --version` (0.31.1) y `agentcore <comando> --help` |
-| Athena no ve las tablas | Falta el catálogo `s3tablescatalog` | Capítulo 0, paso A7 (o *Enable integration* en la consola de S3) |
+| Athena no ve las tablas | Falta el catálogo `s3tablescatalog` | Lo crea `terraform apply` en `infra/cuenta`; `terreno()` lo comprueba (o *Enable integration* en la consola de S3) |
+| `terreno()` marca algo con ✗ | El administrador no aplicó `infra/cuenta` en esta cuenta o región, o lo hizo con `observabilidad = false` | Pídeselo: el participante no puede crearlo. Sin Transaction Search, los capítulos 12, 13 y 15 no evalúan |
 | `tools/list` devuelve 404 o 405 | Gateway creado como HTTP | Capítulo 7: `--protocol-type MCP` |
 | `UnknownServiceError: s3vectors` en Lambda | boto3 antiguo en el *runtime* de Lambda | Empaqueta un boto3 reciente con la Lambda (capítulo 8, §5) |
 | La memoria a largo plazo no devuelve nada | Extracción asíncrona, o *namespace* distinto | `esperar_registros()`; compara con `namespaces_memoria()` |
@@ -137,5 +141,5 @@ labs/
 ## Coste y seguridad
 
 - Cada participante, en su propia cuenta *sandbox*, con el presupuesto del capítulo 0. El coste orientativo por participante está en la guía del formador (sección 4).
-- **Al terminar, ejecuta el capítulo 17**: borra también lo que no gestiona la CLI (Lambdas, Cognito, guardrail, *rate limits*, A/B, datos y logs).
+- **Al terminar, ejecuta el capítulo 17**: borra también lo que no gestiona la CLI (Lambdas, Cognito, guardrail, *rate limits*, A/B, datos y logs). El terreno lo apaga el administrador con `terraform destroy`.
 - `lab_state.json`, `partidas/` y `NovaAssist/agentcore/.env.local` contienen secretos de laboratorio (el *secret* M2M, la contraseña de los usuarios de prueba): están en `.gitignore`. No los compartas.

@@ -740,7 +740,7 @@ flowchart TB
 
 ## 13. Getting started
 
-> La configuración de la cuenta AWS (presupuesto, Transaction Search, *bootstrap* de CDK, permisos) y la parte ejecutable de esta sección están en [`labs/00_configuracion_cuenta_aws.ipynb`](labs/00_configuracion_cuenta_aws.ipynb).
+> El terreno de la cuenta AWS (presupuesto, Transaction Search, catálogo de S3 Tables y plataforma de datos) se crea y se destruye con Terraform en [`infra/cuenta`](infra/cuenta/README.md); la parte ejecutable de esta sección está en [`labs/00_configuracion_cuenta_aws.ipynb`](labs/00_configuracion_cuenta_aws.ipynb).
 
 ### 13.1 Qué vas a construir
 
@@ -772,7 +772,7 @@ Cada laboratorio añade **una sola capacidad** y termina con una verificación y
 
 ### 13.3 Prerrequisitos
 
-- **Una cuenta de AWS *sandbox* por participante**, preparada con el capítulo 0 (Parte A). No hay modo de cuenta compartida: los nombres de recursos son fijos, la limpieza borra todo lo del laboratorio y crear roles de IAM en una cuenta compartida permitiría escalar privilegios.
+- **Una cuenta de AWS *sandbox* por participante**, preparada con Terraform (`infra/cuenta`, la Parte A del capítulo 0). No hay modo de cuenta compartida: los nombres de recursos son fijos, la limpieza borra todo lo del laboratorio y crear roles de IAM en una cuenta compartida permitiría escalar privilegios.
 - **Cuotas de Bedrock** suficientes para el modelo elegido (capítulo 0, B5b): se comprueban y, si hace falta, se piden una semana antes.
 - **Node.js 20 o superior** y npm, para la CLI.
 - **Python 3.10 o superior**, para el código del agente.
@@ -1061,7 +1061,7 @@ jupyter lab
 ```
 
 - **O en Google Colab, sin instalar nada:** cada notebook se abre en Colab desde el repositorio del curso y su celda ☁️ prepara la máquina: monta Google Drive para conservar el estado entre capítulos, instala las dependencias y la CLI y carga las credenciales de los Secretos de Colab ([`labs/README.md`](labs/README.md), opción A). La presentación del curso, cada notebook y cada página de teoría se enlazan entre sí.
-- **Una cuenta *sandbox* por participante.** El capítulo 0 (Parte A) la prepara una vez; las Partes B y C, cada participante.
+- **Una cuenta *sandbox* por participante.** El administrador la prepara una vez con `terraform apply` en `infra/cuenta` (la Parte A del capítulo 0: presupuesto, Transaction Search opcional, catálogo y plataforma de datos); las Partes B y C, cada participante.
 - **Versiones fijadas:** `strands-agents` 1.55.1 con `bedrock-agentcore` 1.22.0, en el *kernel* y en el agente desplegado (`strands-agents` 1.57 o superior rompe la integración de Memory).
 - **La CLI se llama desde el notebook** con `cli()` y `cli_args()` de `lab_utils.py`, que funcionan igual en Windows, macOS y Linux.
 - **El orden importa:** el capítulo 16 parte de todo lo desplegado; el 17 lo borra.
@@ -1075,8 +1075,8 @@ jupyter lab
 | Notebook | [`labs/00_configuracion_cuenta_aws.ipynb`](labs/00_configuracion_cuenta_aws.ipynb) |
 | Teoría (🧭) | [`labs/teoria/index.html`](labs/teoria/index.html) · *El mapa del agente* |
 | Escena | Antes de que Laura escriba, TiendaNova ya tiene sus datos. |
-| Lo que construimos | **A (administrador, una vez por cuenta):** cuenta correcta, presupuesto, Transaction Search (guardando la configuración previa de X-Ray), *bootstrap* de CDK e integración de S3 Tables con Athena. **B (participante):** herramientas, credenciales, perfil `eu.`, prueba de humo, **cuotas del modelo** y precio para el taxímetro. **C (participante):** el dataset sintético en **Iceberg** |
-| Comprobación con código | Inventario de la cuenta vacío; cuotas *cross-region* frente a la orientación del curso |
+| Lo que construimos | **A (administrador, una vez por cuenta, con Terraform en `infra/cuenta`):** presupuesto con alertas, Transaction Search (opcional: solo lo necesitan los capítulos 12, 13 y 15, y una SCP puede bloquearlo), catálogo `s3tablescatalog`, bucket del laboratorio, *table bucket* y namespace Iceberg. **B (participante):** herramientas, credenciales, `terreno()` (encuentra lo anterior por su nombre), perfil `eu.`, prueba de humo, **cuotas del modelo** y precio para el taxímetro. **C (participante):** el dataset sintético en **Iceberg** |
+| Comprobación con código | `terreno()` con el terreno completo; inventario de la cuenta vacío; cuotas *cross-region* frente a la orientación del curso |
 | Cuaderno de deudas | — |
 | Fundamentos | §2, §8, §10.2, §13 |
 
@@ -1277,7 +1277,7 @@ jupyter lab
 |---|---|
 | Notebook | [`labs/17_limpieza.ipynb`](labs/17_limpieza.ipynb) |
 | Escena | El curso ha terminado. ¿Qué sigue cobrando aunque nadie lo use? |
-| Lo que construimos | Inventario y baja ordenada e idempotente: A/B y *rate limit*, pilas de la CLI, barrido de AgentCore, Lambdas y roles, Cognito y guardrail, S3 Vectors, S3 Tables y S3, logs; restauración opcional de la cuenta |
+| Lo que construimos | Inventario y baja ordenada e idempotente: A/B y *rate limit*, pilas de la CLI, barrido de AgentCore, Lambdas y roles, Cognito y guardrail, S3 Vectors, las tablas Iceberg y el contenido del bucket, logs. El terreno (presupuesto, Transaction Search, catálogo y buckets) lo apaga el administrador con `terraform destroy` en `infra/cuenta` |
 | Comprobación con código | Inventario final vacío |
 | Cuaderno de deudas | — |
 | Fundamentos | §8, §16 |

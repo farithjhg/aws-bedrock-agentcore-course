@@ -71,7 +71,7 @@ La demo se puede repetir entera desde [Google Colab](https://colab.research.goog
 | Herramienta | Versión | Para qué |
 |---|---|---|
 | AWS CLI | v2 | Credenciales (`aws sso login` o `aws configure`) |
-| Terraform | ≥ 1.9 | Desplegar `infra/` |
+| Terraform | ≥ 1.9 | Desplegar `infra/` (la demo) y, opcional, `infra/cuenta/` (el terreno de la cuenta) |
 | Python | ≥ 3.10 (el agente desplegado usa 3.13) | Demo, scripts y tests |
 | [uv](https://docs.astral.sh/uv/) | reciente | Empaquetar el agente para Linux arm64 |
 | Git | cualquiera | Clonar el repositorio |
@@ -88,9 +88,8 @@ mira la factura de tu ensayo y consulta la [página de precios](https://aws.amaz
 
 **Al terminar, ejecuta siempre `terraform -chdir=infra destroy`.**
 
-### Observabilidad (opcional)
-Para ver las sesiones del agente en **CloudWatch → GenAI Observability**, activa *Transaction Search* una vez por cuenta:
-*CloudWatch → Application Signals → Transaction Search → Enable*. Tiene coste por tramo ingerido; con un porcentaje de indexación bajo es mínimo.
+### El terreno de la cuenta (opcional): presupuesto y observabilidad
+`infra/cuenta` es una pila de Terraform aparte de la demo, con un presupuesto mensual con alertas (20 USD por defecto) y, si pones `observabilidad = true`, **Transaction Search**, que es lo que hace falta para ver las sesiones del agente en **CloudWatch → GenAI Observability** (parte 3). `terraform -chdir=infra/cuenta apply -var email_alertas=tu@correo`, o `preparar_cuenta()` en la Parte 0 del notebook. Transaction Search tiene coste por traza indexada y algunas organizaciones lo bloquean por SCP (`xray:UpdateTraceSegmentDestination`, `logs:PutResourcePolicy`, `xray:UpdateIndexingRule`): sin él, la demo funciona igual. Es la misma pieza que prepara las cuentas del curso completo (`v7_aprender_haciendo/infra/cuenta`), con un módulo compartido.
 
 ---
 
@@ -105,6 +104,7 @@ Para ver las sesiones del agente en **CloudWatch → GenAI Observability**, acti
 - [ ] Comparte el repositorio y los enlaces con los asistentes.
 
 ### El día anterior
+- [ ] Si quieres la vista de la consola en la parte 3: `terraform -chdir=infra/cuenta apply -var email_alertas=… -var observabilidad=true` (Transaction Search tarda ~10 minutos en indexar).
 - [ ] `python scripts/empaquetar.py` y `terraform -chdir=infra apply`.
 - [ ] Ejecuta el notebook completo una vez, para calentar y comprobar.
 - [ ] **Vacía la memoria del ensayo.** Si no, Laura «ya prefiere WhatsApp» antes de decirlo y la predicción no sorprende a nadie:

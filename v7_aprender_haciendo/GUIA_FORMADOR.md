@@ -12,6 +12,7 @@ Esta guía sirve para dos cosas a la vez: para **ensayar** (qué ejecutar, qué 
 - Laboratorios reales donde antes había comandos de muestra: autorizador JWT (9), Guardrails en cada llamada al modelo (10), límites de coste (12), A/B test con *configuration bundles* (13) y versiones, *endpoints* y puerta de calidad (15). La limpieza es un capítulo propio (17).
 - Una cuenta *sandbox* por participante, sin modo compartido ni rol de participante.
 - Agenda de 3,5 días con pausas y con el tiempo de ✋ y 🧭 dentro de cada capítulo.
+- El terreno de cada cuenta (presupuesto, Transaction Search, catálogo y plataforma de datos) se crea y se destruye con Terraform (`infra/cuenta`), un comando por cuenta; Transaction Search es opcional (`observabilidad`) porque solo lo necesitan los capítulos 12, 13 y 15 y algunas organizaciones lo bloquean por SCP.
 - Los notebooks se ejecutan en **Google Colab** (o en local) y la presentación, cada notebook y cada página de teoría se enlazan entre sí (sección 2, «Google Colab y la navegación del curso»).
 
 ---
@@ -130,13 +131,17 @@ Las cuotas de Bedrock son **por cuenta, región y modelo**, y en cuentas nuevas 
 
 1. **Ensayo completo** en una cuenta limpia, del capítulo 0 al 17, rellenando la plantilla del anexo B. Anota qué rama sale en cada comprobación (por ejemplo, si el modelo dice 14 días en el capítulo 1): es lo que vas a contar.
 2. **Cuotas de Bedrock** revisadas y, si hace falta, solicitadas (una semana antes).
-3. **Parte A del capítulo 0 en todas las cuentas, más la prueba de humo (B4 y B5)**, el día anterior: evita la espera de Transaction Search y el formulario de caso de uso del modelo, que aparece en la primera invocación.
+3. **El terreno de todas las cuentas con Terraform (`infra/cuenta`, Parte A del capítulo 0), más la prueba de humo (B4 y B5)**, el día anterior: evita la espera de Transaction Search y el formulario de caso de uso del modelo, que aparece en la primera invocación. Un estado por cuenta (`README.md` de `infra/cuenta`); guarda los estados, son lo que sabe qué borrar.
 4. **Precio del modelo** elegido (página de precios de Bedrock) para el paso B6 del capítulo 0.
 5. **Disponibilidad regional** en la región elegida (por defecto `eu-west-1`): Evaluations, Policy, Web Search, A/B testing y *configuration bundles*, y la integración de S3 Tables con Athena. Recuerda que la disponibilidad va **por capacidad**: Madrid (`eu-south-2`) tiene Runtime pero no Memory, así que no sirve para este curso.
 6. **CLI fijada:** `npm install -g @aws/agentcore@0.31.1`. No actualices la CLI entre el ensayo y el curso, ni durante el curso.
 7. **Partidas del formador** guardadas tras el ensayo, para el modo demostración (sección 5).
 8. **Presentación y páginas de teoría publicadas en GitHub Pages.** Una sola vez, en el repositorio: *Settings → Pages → Deploy from a branch → `main`, carpeta `/ (root)`*. La presentación queda en `https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/presentacion_nova_assist.html` y la teoría en `https://farithjhg.github.io/aws-bedrock-agentcore-course/v7_aprender_haciendo/labs/teoria/`; los notebooks y la presentación ya enlazan a esas direcciones. Prueba las páginas en el proyector (zoom al 125 %) y en un móvil: se usan en el navegador de cada participante. (Abiertas desde JupyterLab, los HTML no ejecutan sus *scripts* hasta pulsar *Trust HTML*; con Pages no hace falta.)
 9. **Colab probado** con una cuenta de Google cualquiera: abre el capítulo 0 desde la presentación, crea los secretos y ejecuta la celda ☁️ (sección «Google Colab»). Comprueba que el capítulo 3 despliega desde Colab y que el capítulo 4, abierto después, recupera el estado de Drive.
+
+### Equipo del administrador
+
+- **Terraform 1.9 o superior** y credenciales de administración de cada cuenta *sandbox* (un perfil por cuenta). Con eso prepara el terreno de todas las cuentas desde su equipo (`infra/cuenta`), sin Jupyter. El participante no necesita Terraform.
 
 ### Equipo de cada participante
 
@@ -298,9 +303,10 @@ Una historia es frágil en directo: cada capítulo depende del anterior. Los pun
 
 | Recurso o clave de estado | Capítulo | Sección |
 |---|---|---|
-| `REGION`, `ACCOUNT_ID`, `BUDGET_NAME`, `XRAY_PREVIO` (configuración de X-Ray anterior al curso, para restaurarla) | 0 | A1, A3 y A4 |
+| El terreno: presupuesto, Transaction Search, catálogo `s3tablescatalog`, bucket del laboratorio, *table bucket* y namespace | 0 | Parte A: `terraform apply` en `infra/cuenta` (administrador) |
+| `REGION`, `ACCOUNT_ID`, `BUDGET_NAME`, `LAB_BUCKET`, `TABLE_BUCKET_ARN`, `ATHENA_CATALOG`, `OBSERVABILIDAD` | 0 | B2 y B3b (`terreno()` los encuentra por su nombre) |
 | `MODEL_ID`, `PRECIO_ENTRADA_MTOK`, `PRECIO_SALIDA_MTOK` | 0 | B4 y B6 |
-| `LAB_BUCKET`, `TABLE_BUCKET_ARN`, `ATHENA_CATALOG`, tablas Iceberg, `datos/tiendanova.json` | 0 | C1 a C4 |
+| Tablas Iceberg, documentos de políticas en el bucket, `datos/tiendanova.json` | 0 | C1 a C4 |
 | Proyecto `NovaAssist` y `AGENT_ARN` | 3 | §2 (crear) y §5 (desplegar) |
 | `MEMORY_ID` | 4 | §2 |
 | `LTM_NAMESPACES` | 5 | §1 |
@@ -334,14 +340,14 @@ Cada ficha tiene la misma estructura: la tabla para narrar, las predicciones con
 
 ### Capítulo 0 — El terreno: la cuenta AWS y los datos
 
-📓 `labs/00_configuracion_cuenta_aws.ipynb` · 🗺️ [`teoria/index.html`](labs/teoria/index.html) · ⏱️ En clase, 60 min (Parte B 25 · Parte C 20 · ✋ 3 · mapa 12). La Parte A la ejecuta el administrador el día anterior (25 min, más ~10 de espera).
+📓 `labs/00_configuracion_cuenta_aws.ipynb` · 🗺️ [`teoria/index.html`](labs/teoria/index.html) · ⏱️ En clase, 55 min (Parte B 25 · Parte C 15 · ✋ 3 · mapa 12). La Parte A la ejecuta el administrador el día anterior con Terraform (`infra/cuenta`: 5 min por cuenta, más ~10 de espera de Transaction Search).
 
 | | |
 |---|---|
 | 🎬 **Escena para narrar** | «Antes de que Laura escriba su primer mensaje, TiendaNova ya existe: tiene sus pedidos, sus clientes y sus devoluciones en una plataforma de datos. Hoy preparamos el escenario: una cuenta, un presupuesto para no llevarse sustos y esa plataforma de datos.» |
 | ❓ **Pregunta al grupo** | «¿Qué es lo primero que se rompe cuando un piloto de IA llega a producción?» Suelen decir el coste, los permisos o los datos. Anótalo: el curso responde a las tres. |
 | 💡 **Momento «ajá»** | Athena devuelve los estados de los pedidos desde tablas Iceberg recién creadas: los datos del caso ya existen y se consultan con SQL. |
-| 🖥️ **Qué debe verse** | A1 con la cuenta correcta y el inventario vacío · presupuesto · Transaction Search con destino `CloudWatchLogs` · pila `CDKToolkit` · perfiles `eu.` · «OK» de la API Converse · cuotas del modelo (B5b) · recuento de filas por tabla · la consulta de C5. (El índice vectorial no se crea aquí: llega en el capítulo 8.) |
+| 🖥️ **Qué debe verse** | `terraform apply` con el plan de 9 recursos y «Apply complete» (Parte A, el día anterior) · en B3b, `terreno()` con todo en ✔ · perfiles `eu.` · «OK» de la API Converse · cuotas del modelo (B5b) · recuento de filas por tabla · la consulta de C5. (El índice vectorial no se crea aquí: llega en el capítulo 8.) |
 | 📒 **Cuaderno de deudas** | — |
 | 💾 **Guardado** | `guardar_partida(0)` al final de la Parte C |
 | 🌉 **Puente** | «Todo listo. Ahora entra Laura.» |
@@ -358,24 +364,26 @@ Cada ficha tiene la misma estructura: la tabla para narrar, las predicciones con
 
 | Síntoma | Qué hacer |
 |---|---|
-| A1 falla con «No es la cuenta esperada» | Es intencionado: hay que fijar `CUENTA_ESPERADA`. |
-| A1 muestra recursos del laboratorio | La cuenta viene de una edición anterior: ejecuta antes el capítulo 17. |
+| `terraform apply` falla en la precondición de la cuenta | Es intencionado: `cuenta_esperada` no coincide con las credenciales. Revisa el perfil de AWS. |
+| `terraform apply` falla con `AccessDenied` en X-Ray o en la política de logs | Una SCP bloquea Transaction Search. Pide las tres acciones a la organización, que lo aplique la organización, o `observabilidad = false` (sin capítulos 12, 13 y 15). |
+| `terreno()` marca ✗ en algo | La Parte A no se aplicó en esta cuenta o región, o se aplicó con `observabilidad = false`. El participante no puede crearlo: lo hace el administrador con Terraform. |
+| El inventario (A4) muestra recursos del laboratorio | La cuenta viene de una edición anterior: ejecuta antes el capítulo 17. |
 | `ValidationException` en la prueba de humo | Se ha copiado el `modelId` base: usa el ID del perfil `eu.`. |
 | Bedrock pide un formulario de caso de uso | Pasa la primera vez que se usan modelos de un proveedor: rellénalo el día anterior. |
 | B5b no encuentra cuotas | El nombre de la cuota no sigue el patrón esperado: búscalas en Service Quotas → Amazon Bedrock. |
-| A7 falla al crear `s3tablescatalog` | En algunas regiones hace falta Lake Formation: *Enable integration* en la consola de S3. |
+| `terraform apply` falla al crear `s3tablescatalog` | En algunas regiones hace falta Lake Formation: *Enable integration* en la consola de S3 y vuelve a aplicar (el recurso ya existente se importa con `terraform import`). |
 | PyIceberg devuelve 403 | Credenciales de otra cuenta o región, o una SCP que bloquea `s3tables:*`. |
 | `agentcore` no aparece (sobre todo en Windows) | Terminal nueva tras `npm install -g`; comprueba que la carpeta global de npm está en el `PATH`. |
 
 **✅ Ensayo**
 
-- [ ] Parte A completa en una cuenta limpia y sin errores; Transaction Search activo
+- [ ] `terraform apply` de `infra/cuenta` en una cuenta limpia y sin errores; `terreno()` todo en ✔; `terraform destroy` al final del ensayo deja la cuenta como estaba
 - [ ] B5b muestra cuotas iguales o superiores a la orientación (sección 2)
 - [ ] C5 devuelve los cuatro estados
 - [ ] El mapa apaga cuatro piezas en «En tu máquina» y cada pieza enlaza su página
 - [ ] Tiempo real de cada parte anotado
 
-> 🎙️ **Consejo del formador.** La Parte A y la prueba de humo (B4 y B5) el día antes, en todas las cuentas, eliminan la espera de Transaction Search y el formulario del modelo. Y si alguien pregunta por qué no hay cuenta compartida, la respuesta corta es: «porque el capítulo 17 borra todo lo que encuentra».
+> 🎙️ **Consejo del formador.** El `apply` del terreno y la prueba de humo (B4 y B5) el día antes, en todas las cuentas, eliminan la espera de Transaction Search y el formulario del modelo. Y si alguien pregunta por qué no hay cuenta compartida, la respuesta corta es: «porque el capítulo 17 borra todo lo que encuentra».
 
 ---
 
@@ -696,7 +704,7 @@ Pregunta: *¿qué tres preguntas aparecen cuando una herramienta deja de vivir e
 | `tools/list` devuelve 404 o 405 | La CLI 0.31.1 crea los gateways con protocolo HTTP por defecto; el notebook pasa `--protocol-type MCP`. Si se creó sin él, quítalo con `cli('agentcore remove gateway --name NovaGateway --yes')` (antes su *target*, si la CLI lo pide), despliega y repite la sección 4. |
 | `token_m2m()` falla | El dominio de Cognito tarda un minuto en estar activo. |
 | El cliente MCP local no arranca | Se lanza como proceso aparte; si falla, ejecuta `python mcp_local/cliente_local.py` en una terminal para ver el error completo. |
-| Athena no ve las tablas | Falta el catálogo `s3tablescatalog` (capítulo 0, A7). |
+| Athena no ve las tablas | Falta el catálogo `s3tablescatalog` (lo crea Terraform en `infra/cuenta`; `terreno()` lo comprueba). |
 | Las respuestas tardan más | Athena tarda segundos: explica la diferencia entre base transaccional y lago de datos. |
 
 **✅ Ensayo**
@@ -938,7 +946,7 @@ Pregunta: *¿qué necesitas para saber qué pasó en una conversación que atrav
 | Síntoma | Qué hacer |
 |---|---|
 | La evaluación no encuentra la sesión | Las trazas tardan unos minutos en estar disponibles: espera y repite. |
-| Transaction Search no estaba activo | Capítulo 0, A4, más unos 10 minutos de espera. |
+| Transaction Search no estaba activo | `infra/cuenta` con `observabilidad = true`, más unos 10 minutos de espera. Si una SCP lo impide, los capítulos 12, 13 y 15 no pueden evaluar: cuéntalos con las trazas del formador. |
 | Los 25 casos chocan con la cuota | Ejecútalos por turnos o reduce la lista para la clase. |
 | No aparecen 429 | Propagación o *fail-open*: repite la celda al minuto. |
 
@@ -1140,12 +1148,12 @@ Pregunta: *¿qué impide que un cambio malo llegue a todos los clientes, y qué 
 
 | Predicción | Lo esperable | Si sale distinto |
 |---|---|---|
-| §0: ¿qué desaparece con `remove all` + `deploy` y qué no? | **Desaparece** lo de la CLI: runtimes (NovaAgent y NovaWeb) y sus *endpoints*, la memoria, los gateways y sus *targets*, el motor y las políticas, las evaluaciones online, los *bundles* y los *credential providers*. **No desaparece:** las Lambdas y sus roles, los pools de Cognito, el guardrail, el *rate limit*, el A/B test, S3, S3 Tables, S3 Vectors, los logs, y lo de la cuenta (presupuesto, Transaction Search, `CDKToolkit`). | — |
+| §0: ¿qué desaparece con `remove all` + `deploy` y qué no? | **Desaparece** lo de la CLI: runtimes (NovaAgent y NovaWeb) y sus *endpoints*, la memoria, los gateways y sus *targets*, el motor y las políticas, las evaluaciones online, los *bundles* y los *credential providers*. **No desaparece:** las Lambdas y sus roles, los pools de Cognito, el guardrail, el *rate limit*, el A/B test, S3, S3 Tables, S3 Vectors, los logs, y lo de la cuenta (presupuesto, Transaction Search, `CDKToolkit`, el terreno de Terraform). | — |
 | §9: ¿quedará algo? ¿Qué? | **Nada.** | Lo más habitual: un borrado asíncrono que aún no ha terminado (runtimes, gateways, memoria), una pila en `DELETE_FAILED` o un grupo de logs que se recreó porque quedaba una sesión viva. El notebook es idempotente: espera, corrige y vuelve a ejecutarlo. |
 
 **Cómo conducirlo**
 
-- Cada participante en su cuenta. La sección 8 (X-Ray, presupuesto, catálogo) solo la activa el administrador, y solo si la cuenta deja de usarse para formación; si no, la celda no hace nada.
+- Cada participante en su cuenta. El terreno (presupuesto, Transaction Search, catálogo y buckets) lo apaga el administrador con `terraform destroy` en `infra/cuenta`, y solo si la cuenta deja de usarse para formación.
 - Recomienda **conservar el presupuesto un mes** para detectar costes residuales.
 - El ensayo no está terminado hasta que, al día siguiente, *Cost Explorer* no muestra cargos nuevos del laboratorio.
 
@@ -1175,6 +1183,7 @@ Lo que sigue no es un fallo del material: son comportamientos de servicios recie
 | Resultados del A/B | 13 | El análisis tarda unos 15 minutos y con 40 sesiones casi nunca es significativo. | La agenda lo pone en la comida; el «no significativo» es parte de la lección. |
 | Permisos de la evaluación online y de los *bundles* | 12, 13 | Si `deploy` falla al crearlos, suele ser un permiso del rol que crea la CLI. | `agentcore validate`, los eventos de la pila en CloudFormation y `agentcore logs`. Anota el mensaje en el anexo B. |
 | Cuotas de Bedrock | 6, 12–15 | `ThrottlingException` aunque el código esté bien. | Sección 2: comprobar una semana antes y pedir el aumento. |
+| SCP sobre Transaction Search | 0, 12, 13, 15 | `terraform apply` falla en `logs:PutResourcePolicy`, `xray:UpdateTraceSegmentDestination` o `xray:UpdateIndexingRule`. | Pide esas tres acciones a la organización o aplica con `observabilidad = false`; el plan las muestra antes de tocar nada. |
 | CLI distinta de la 0.31.1 | Todos | Opciones con otro nombre, valores por defecto distintos (como el protocolo del Gateway). | Fija la versión. Si no puedes, ensaya con la que vayas a usar y anota las diferencias. |
 | Páginas de teoría en blanco o con un aviso amarillo | Todos | JupyterLab no ejecuta los *scripts* sin *Trust HTML*. | Ábrelas desde GitHub Pages: son los enlaces de los notebooks (sección 2). |
 | La celda ☁️ pide reiniciar la sesión | Todos (Colab) | Colab trae versiones preinstaladas de algunos paquetes que `requirements.txt` fija. | Reinicia la sesión y repite la celda: la segunda vez no reinstala. Anótalo en el ensayo. |

@@ -275,6 +275,64 @@ def comprobar_gateway() -> None:
     print("✔ Gateway listo:", state_get("GATEWAY_URL"), "· credential provider:", prov)
 
 
+# --------------------------------------------------------------------------- el terreno (Terraform, infra/cuenta)
+TERRENO_PRESUPUESTO = "nova-assist-lab"
+
+
+def terreno(mostrar: bool = True) -> dict:
+    """Encuentra lo que creó `terraform apply` en infra/cuenta (Parte A del capítulo 0) y lo apunta en lab_state.json.
+
+    No necesita el estado de Terraform: busca los recursos por su nombre (nova-datos-<cuenta>, nova-lab-<cuenta>-<región>,
+    s3tablescatalog, nova-assist-lab) y comprueba Transaction Search. Devuelve lo que falta (vacío si está todo).
+    """
+    import boto3
+    acct, r = account_id(), region()
+    faltan = []
+
+    def comprobar(nombre, fn, clave=None):
+        try:
+            valor = fn()
+        except Exception as e:  # noqa: BLE001
+            valor = None
+            detalle = f"{type(e).__name__}: {e}"
+        else:
+            detalle = ""
+        if valor:
+            if mostrar:
+                print(f"✔ {nombre}")
+            return valor
+        faltan.append(nombre)
+        if mostrar:
+            print(f"✗ {nombre}" + (f" → {detalle}" if detalle else ""))
+        return None
+
+    s3t = boto3.client("s3tables", region_name=r)
+    nombre_tb = f"nova-datos-{acct}"
+    tb = comprobar(f"Table bucket {nombre_tb}", lambda: next(
+        (b for b in s3t.list_table_buckets()["tableBuckets"] if b["name"] == nombre_tb), None))
+    if tb:
+        ns = comprobar(f"Namespace {ICEBERG_NAMESPACE}", lambda: next(
+            (n for n in s3t.list_namespaces(tableBucketARN=tb["arn"]).get("namespaces", []) if ICEBERG_NAMESPACE in n["namespace"]), None))
+        state_set(TABLE_BUCKET=nombre_tb, TABLE_BUCKET_ARN=tb["arn"], ATHENA_CATALOG=f"s3tablescatalog/{nombre_tb}")
+    lab_bucket = f"nova-lab-{acct}-{r}"
+    if comprobar(f"Bucket {lab_bucket}", lambda: boto3.client("s3", region_name=r).head_bucket(Bucket=lab_bucket) or True):
+        state_set(LAB_BUCKET=lab_bucket, ATHENA_OUTPUT=f"s3://{lab_bucket}/athena/")
+    comprobar("Catálogo s3tablescatalog (Athena)", lambda: boto3.client("glue", region_name=r).get_catalog(CatalogId="s3tablescatalog"))
+    if comprobar(f"Presupuesto {TERRENO_PRESUPUESTO}", lambda: boto3.client("budgets", region_name="us-east-1").describe_budget(
+            AccountId=acct, BudgetName=TERRENO_PRESUPUESTO)):
+        state_set(BUDGET_NAME=TERRENO_PRESUPUESTO)
+    destino = comprobar("Transaction Search (capítulos 12, 13 y 15)", lambda: (
+        boto3.client("xray", region_name=r).get_trace_segment_destination().get("Destination") == "CloudWatchLogs") or None)
+    state_set(OBSERVABILIDAD=bool(destino))
+    if faltan and mostrar:
+        print("\n⚠ Falta parte del terreno. El administrador lo crea con `terraform apply` en infra/cuenta (capítulo 0, Parte A).")
+        if faltan == ["Transaction Search (capítulos 12, 13 y 15)"]:
+            print("  Solo falta Transaction Search: los capítulos 0 a 11, 14, 16 y 17 funcionan; los capítulos 12, 13 y 15 no pueden evaluar.")
+    elif mostrar:
+        print("\n✔ El terreno está completo")
+    return {"faltan": faltan, "observabilidad": bool(destino)}
+
+
 # --------------------------------------------------------------------------- localizar recursos desplegados
 def _control():
     import boto3
@@ -1079,9 +1137,16 @@ def inventario_laboratorio(mostrar: bool = True) -> dict[str, list[str]]:
         StackStatusFilter=["CREATE_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "ROLLBACK_COMPLETE",
                            "DELETE_FAILED", "CREATE_FAILED"])["StackSummaries"]])
     anotar("CloudWatch Logs", lambda: grupos_de_logs_laboratorio())
+    # El terreno (infra/cuenta, Terraform) no cuenta como laboratorio: lo borra `terraform destroy`, no el capítulo 17
+    terreno_nombres = {f"nova-datos-{state_get('ACCOUNT_ID', '')}", f"nova-lab-{state_get('ACCOUNT_ID', '')}-{r}"}
+    for servicio in ("S3", "S3 Tables"):
+        if servicio in inv:
+            inv[servicio] = [n for n in inv[servicio] if n not in terreno_nombres]
+            if not inv[servicio]:
+                del inv[servicio]
     if mostrar:
         if not inv:
-            print("✔ No queda nada del laboratorio en la cuenta")
+            print("✔ No queda nada del laboratorio en la cuenta (el terreno de infra/cuenta no cuenta: lo gestiona Terraform)")
         for servicio, nombres in inv.items():
             print(f"• {servicio}: {', '.join(nombres[:8])}{' …' if len(nombres) > 8 else ''}")
     return inv

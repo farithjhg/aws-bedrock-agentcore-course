@@ -209,7 +209,7 @@ table.placa-tabla th { color: var(--copper); font-family: var(--display); font-s
 document.getElementById("sin-js")?.remove();
 (function () {
   var a = document.querySelector("a.volver");
-  if (!a) return;
+  if (!a || !a.dataset.nb) return;
   var nb = a.dataset.nb;
   if (location.protocol === "file:") { a.href = "../" + nb + ".ipynb"; return; }
   if (/\/files\//.test(location.pathname)) {

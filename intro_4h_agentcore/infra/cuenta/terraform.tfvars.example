@@ -1,0 +1,6 @@
+# Copia este archivo como terraform.tfvars y rellénalo.
+region          = "eu-west-1"
+cuenta_esperada = "123456789012"          # ← la cuenta sandbox
+presupuesto_usd = 20
+email_alertas   = "formador@empresa.com"  # ← alertas al 50 %, 80 % y 100 % previsto
+observabilidad  = false                   # true para ver las sesiones en CloudWatch GenAI Observability

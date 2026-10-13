@@ -1,9 +1,11 @@
 """Despliegue y apagado de la demo desde Python: lo mismo que los comandos del README, pero desde una celda.
 
     from despliegue import *
+    preparar_cuenta(email_alertas="tu@correo")   # opcional: presupuesto con alertas (y Transaction Search) en infra/cuenta
     modelos()                  # lista los inference profiles eu.anthropic de la cuenta
     desplegar("eu.anthropic…") # empaqueta el agente, terraform init y apply
     apagar()                   # terraform destroy
+    apagar_cuenta()            # terraform destroy de infra/cuenta (solo si la cuenta deja de usarse)
 
 Funciona en tu equipo (con Terraform y uv instalados) y en Google Colab (la celda ☁️ los instala).
 """
@@ -18,6 +20,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
 INFRA = RAIZ / "infra"
+CUENTA = INFRA / "cuenta"              # el terreno de la cuenta: presupuesto y Transaction Search (pila aparte)
 TFVARS = INFRA / "terraform.tfvars"
 REGION_POR_DEFECTO = "eu-west-1"
 
@@ -29,10 +32,11 @@ def _terraform() -> str:
     return exe
 
 
-def _tf(*args: str, capturar: bool = False) -> str:
+def _tf(*args: str, capturar: bool = False, carpeta: Path | None = None) -> str:
     """Ejecuta terraform -chdir=infra … mostrando la salida en vivo (o capturándola)."""
-    cmd = [_terraform(), f"-chdir={INFRA}", *args]
-    print("$ terraform", " ".join(args))
+    carpeta = carpeta or INFRA
+    cmd = [_terraform(), f"-chdir={carpeta}", *args]
+    print(f"$ terraform ({carpeta.relative_to(RAIZ)})", " ".join(a for a in args if not a.startswith("-var=email")))
     r = subprocess.run(cmd, text=True, encoding="utf-8", capture_output=capturar)
     if r.returncode:
         if capturar:
@@ -93,11 +97,60 @@ def empaquetar() -> Path:
     return RAIZ / "build" / "agent.zip"
 
 
-def init() -> None:
-    if not (Path(os.environ.get("TF_DATA_DIR", INFRA / ".terraform")) / "providers").exists():
-        _tf("init", "-input=false")
+def init(carpeta: Path | None = None) -> None:
+    carpeta = carpeta or INFRA
+    datos = Path(os.environ["TF_DATA_DIR"]) if os.environ.get("TF_DATA_DIR") else carpeta / ".terraform"
+    if not (datos / "providers").exists():
+        _tf("init", "-input=false", carpeta=carpeta)
     else:
         print("= terraform init ya hecho")
+
+
+# --------------------------------------------------------------------------- el terreno de la cuenta (infra/cuenta)
+def _env_cuenta():
+    """TF_DATA_DIR propio para la pila de la cuenta cuando se trabaja con TF_DATA_DIR (Colab)."""
+    previo = os.environ.get("TF_DATA_DIR")
+    if previo:
+        os.environ["TF_DATA_DIR"] = previo + "_cuenta"
+    return previo
+
+
+def _restaurar_env(previo) -> None:
+    if previo:
+        os.environ["TF_DATA_DIR"] = previo
+
+
+def preparar_cuenta(email_alertas: str, presupuesto_usd: int = 20, observabilidad: bool = False,
+                    region_aws: str | None = None) -> dict:
+    """Prepara la cuenta: presupuesto con alertas y, si observabilidad=True, Transaction Search (vista de la consola).
+
+    Es una pila aparte (infra/cuenta) que no se cae con apagar(): el presupuesto es de la cuenta, no de la demo.
+    """
+    assert "@" in email_alertas, "email_alertas: destinatario de las alertas del presupuesto"
+    previo = _env_cuenta()
+    try:
+        init(CUENTA)
+        _tf("apply", "-input=false", "-auto-approve", f"-var=region={region_aws or region()}",
+            f"-var=presupuesto_usd={presupuesto_usd}", f"-var=email_alertas={email_alertas}",
+            f"-var=observabilidad={'true' if observabilidad else 'false'}", carpeta=CUENTA)
+        salidas = {k: v["value"] for k, v in json.loads(_tf("output", "-json", capturar=True, carpeta=CUENTA)).items()}
+    finally:
+        _restaurar_env(previo)
+        _a_drive()
+    print("\n✅ Cuenta preparada:", salidas)
+    return salidas
+
+
+def apagar_cuenta() -> None:
+    """terraform destroy de infra/cuenta: borra el presupuesto y desactiva Transaction Search. Solo si la cuenta deja de usarse."""
+    previo = _env_cuenta()
+    try:
+        init(CUENTA)
+        _tf("destroy", "-input=false", "-auto-approve", carpeta=CUENTA)
+    finally:
+        _restaurar_env(previo)
+        _a_drive()
+    print("\n✅ Terreno de la cuenta apagado.")
 
 
 def desplegar(model_id: str | None = None, region_aws: str | None = None) -> dict:
@@ -132,4 +185,4 @@ def apagar() -> None:
     print("\n✅ Todo apagado. Comprueba mañana en Cost Explorer que no hay cargos nuevos.")
 
 
-__all__ = ["modelos", "escribir_tfvars", "empaquetar", "init", "desplegar", "salidas", "apagar"]
+__all__ = ["modelos", "escribir_tfvars", "empaquetar", "init", "desplegar", "salidas", "apagar", "preparar_cuenta", "apagar_cuenta"]
