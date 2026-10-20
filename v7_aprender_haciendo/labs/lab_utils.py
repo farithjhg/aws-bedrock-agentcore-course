@@ -21,7 +21,7 @@ LAB_ROOT = Path(__file__).resolve().parent
 PROJECT = LAB_ROOT / "NovaAssist"                 # lo crea el Lab 02
 AGENT_DIR = PROJECT / "app" / "NovaAgent"
 STATE_FILE = LAB_ROOT / "lab_state.json"         # ¡no versionar! puede contener secretos de laboratorio
-DEFAULT_REGION = "eu-west-1"
+DEFAULT_REGION = "eu-central-1"
 EN_COLAB = "google.colab" in sys.modules      # en Colab, la celda ☁️ de cada notebook prepara la sesión (colab_nova.py)
 
 

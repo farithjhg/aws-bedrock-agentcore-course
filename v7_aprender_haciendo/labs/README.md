@@ -10,10 +10,12 @@ TiendaNova, un e-commerce ficticio, necesita un asistente de postventa. Cada cap
 
 Requisitos comunes: acceso a **tu propia cuenta *sandbox*** (una por participante), con **el terreno ya preparado por el administrador** (`terraform apply` en [`../infra/cuenta`](../infra/cuenta/README.md): presupuesto, Transaction Search, catálogo y plataforma de datos; es la Parte A del capítulo 0) y cuotas de Bedrock suficientes para el modelo (capítulo 0, B5b). Tú no necesitas Terraform: `terreno()` encuentra lo que creó.
 
+La región de los laboratorios es **Frankfurt (`eu-central-1`)**. Configura también esa región en `infra/cuenta/terraform.tfvars` antes de preparar la cuenta. Si retomas el curso, actualiza el secreto `AWS_REGION` de Colab si lo tienes y vuelve a ejecutar la configuración del capítulo 0; los recursos existentes en otra región no se trasladan automáticamente.
+
 ### Opción A · Google Colab (sin instalar nada)
 
 1. Abre el capítulo 0 en Colab: [![Abrir en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/farithjhg/aws-bedrock-agentcore-course/blob/main/v7_aprender_haciendo/labs/00_configuracion_cuenta_aws.ipynb) (o desde su escena en la presentación).
-2. En el panel **Secretos** (icono 🔑) crea `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` y, si tus credenciales son temporales (portal de IAM Identity Center → *Access keys*), `AWS_SESSION_TOKEN`. Opcional: `AWS_REGION` (por defecto `eu-west-1`). Activa el acceso del notebook a cada secreto.
+2. En el panel **Secretos** (icono 🔑) crea `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` y, si tus credenciales son temporales (portal de IAM Identity Center → *Access keys*), `AWS_SESSION_TOKEN`. Opcional: `AWS_REGION` (por defecto `eu-central-1`). Activa el acceso del notebook a cada secreto.
 3. Ejecuta la **celda ☁️** (la primera de código): descarga el curso, monta tu Google Drive, instala las dependencias, Node.js y la AgentCore CLI 0.31.1 y comprueba la cuenta. Tarda 2–3 minutos.
 4. Sigue el notebook. Tu estado (`lab_state.json`, el proyecto `NovaAssist`, `datos/`, las partidas) se guarda solo en `MyDrive/NovaAssist_curso`; `guardar_en_drive()` lo fuerza.
 5. Al terminar, el enlace del final abre el capítulo siguiente. **Cada notebook abre una máquina nueva**: su celda ☁️ recupera tu estado de Drive.

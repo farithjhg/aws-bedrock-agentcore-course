@@ -35,7 +35,7 @@ MONTAJE = Path("/content/drive")
 CARPETA_DRIVE = "NovaAssist_curso"
 CLI_VERSION = "0.31.1"
 NODE_MINIMO, NODE_INSTALAR = 20, 22
-REGION_POR_DEFECTO = "eu-west-1"
+REGION_POR_DEFECTO = "eu-central-1"
 SECRETOS = ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "AWS_REGION")
 
 _MARCAS = Path("/content/.nova_colab")          # lo ya hecho en esta sesión de Colab
