@@ -10,3 +10,8 @@
 
 # Local Python environment
 .venv/
+
+# Docusaurus (AIP-C01 site) — never commit deps or build cache
+aip_c01_examen/site/node_modules/
+aip_c01_examen/site/.docusaurus/
+aip_c01_examen/site/build/
