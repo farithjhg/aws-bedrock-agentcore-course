@@ -1,0 +1,31 @@
+/**
+ * AIP-C01 Exam Prep theme.
+ * Dark by default with a gold/green nudge matching the repo palette.
+ */
+
+:root {
+  --ifm-color-primary: #1f6f4f;
+  --ifm-color-primary-dark: #1c6446;
+  --ifm-color-primary-darker: #1a5e42;
+  --ifm-color-primary-darkest: #154d36;
+  --ifm-color-primary-light: #227a58;
+  --ifm-color-primary-lighter: #24805c;
+  --ifm-color-primary-lightest: #298f68;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-background-color: #071d16;
+  --ifm-background-surface-color: #0c2a20;
+  --ifm-color-primary: #f5d547;
+  --ifm-color-primary-dark: #f3cf2a;
+  --ifm-color-primary-darker: #f2cc1b;
+  --ifm-color-primary-darkest: #d4b00a;
+  --ifm-color-primary-light: #f7db64;
+  --ifm-color-primary-lighter: #f8de73;
+  --ifm-color-primary-lightest: #fae8a0;
+  --ifm-link-color: #f5d547;
+  --ifm-menu-color-active: #f5d547;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
