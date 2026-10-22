@@ -4,7 +4,9 @@ sidebar_position: 3
 title: Resources
 ---
 
-Curated, authoritative sources. Prices, dates, and exam-guide revisions change — **verify current details at registration**. Third-party sources are attributed; no large verbatim quotes are reproduced here.
+**You now have the differentiated base.** Use this page to (1) **confirm the specifics** this course deliberately did not pin down, and (2) **drill the official AWS practice set** on Skill Builder. That bridge is this page's job.
+
+Prices, dates, and exam-guide revisions change — **verify at registration**.
 
 Back to [course home](/) · [exam strategy](/blueprint/vision-examen) · [labs](/practica/labs-hands-on).
 
@@ -36,4 +38,4 @@ These specifics can change — **do not trust a study note over the live page**:
 - **Exam guide revision:** confirm the domain weights and task statements match the guide revision in effect when you sit the exam.
 - Any **model names, context windows, or pricing percentages** cited in the blueprints are flagged "confirm in current AWS docs" — verify against the links above.
 
-Reuse asset: your existing agent repo at [`../intro_4h_agentcore/README.md`](https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/README.md) for Domain-2 hands-on practice (see [labs](/practica/labs-hands-on)).
+Reuse asset: your existing [AgentCore repo README](https://farithjhg.github.io/aws-bedrock-agentcore-course/intro_4h_agentcore/README.md) for Domain-2 hands-on (see [labs](/practica/labs-hands-on)).

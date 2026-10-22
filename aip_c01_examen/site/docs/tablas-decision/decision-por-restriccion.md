@@ -4,7 +4,7 @@ sidebar_position: 1
 title: Master Decision Table
 ---
 
-This is the single most exam-valuable asset in the course. Nearly every AIP-C01 scenario hides **one governing constraint**. If you can name that constraint, this table tells you the preferred AWS service or pattern — and lets you eliminate the distractors.
+The crown jewel. Nearly every AIP-C01 scenario hides **one governing constraint**. Name it, and this table gives you the preferred service or pattern and kills the distractors.
 
 Back to [course home](/). See also [vector store table](/tablas-decision/decision-vector-stores) and [deployment table](/tablas-decision/decision-despliegue).
 

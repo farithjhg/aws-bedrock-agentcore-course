@@ -4,19 +4,17 @@ sidebar_position: 3
 title: Final Mock & Readiness Gate
 ---
 
-This is your dress rehearsal and the honest go/no-go decision for the Dec 15, 2026 exam. Do it in Week 8 (see the W8 checkpoint in [PLAN-ESTRATEGICO.md](/plan-estrategico)).
+Dress rehearsal and honest go/no-go for the Dec 15, 2026 exam. Run it in Week 8 (see [the 8-week plan](/plan-estrategico)).
 
 Back to [course home](/).
 
 ## Mock protocol
 
-Simulate the real thing as closely as possible:
-
-- **75 questions in 180 minutes**, timer running, no notes, no pausing.
-- **Source mix:** combine the **official AWS practice question set** (the best proxy for real difficulty — see [recursos.md](/recursos)) with this course's [question bank](/practica/banco-preguntas). The official set matters most; do not judge readiness on this course's bank alone.
-- **~2.4 min/question.** Flag anything over ~3 minutes and move on.
-- **Leave nothing blank** — unanswered counts as wrong, and there is no guessing penalty.
-- After finishing, review **every** wrong answer and trace it back to the relevant [blueprint](/blueprint/vision-examen) section and the [master constraint table](/tablas-decision/decision-por-restriccion).
+- **75 questions / 180 minutes**, timer running, no notes, no pausing.
+- **Source mix:** the **official AWS practice set** ([resources](/recursos)) + this course's [question bank](/practica/banco-preguntas). The official set matters most — don't judge readiness on this bank alone.
+- **~2.4 min/question**; flag anything over ~3 min and move on.
+- **Leave nothing blank.**
+- Review **every** miss back to its [blueprint](/blueprint/vision-examen) section and the [master constraint table](/tablas-decision/decision-por-restriccion).
 
 ## Domain-by-domain readiness checklist
 
@@ -45,7 +43,7 @@ Must-know discriminators to self-quiz (cover the answer, say it aloud):
 
 ## Scoring self-assessment
 
-You cannot compute your exact scaled score from a practice set — AWS uses a scaled model and 10 unscored items. Use practice **percent correct** as a rough proxy only.
+You cannot compute your scaled score from a practice set (scaled model + 10 unscored items). Use practice **percent correct** as a rough proxy only.
 
 | What you see | How to read it |
 |---|---|
@@ -54,11 +52,11 @@ You cannot compute your exact scaled score from a practice set — AWS uses a sc
 | Practice % caveat | A practice percentage is an **estimate**, not the scaled score. Build a margin above the bar, don't aim to just scrape it |
 | Per-domain % | Use it to find weak spots, not to predict the result (compensatory) |
 
-**Build a margin:** because practice % is only an estimate and real items can be harder, aim to be **comfortably above** the bar on mixed full-length practice, not exactly at it.
+**Build a margin:** aim to be **comfortably above** the bar on mixed full-length practice, not exactly at it.
 
 ## The honest readiness gate (~Dec 8 decision)
 
-Around **Dec 8, 2026** (one week out), make a deliberate go/no-go call. The $300 and the attempt are real costs — don't gamble them on a coin flip.
+One week out (**~Dec 8, 2026**), make a deliberate go/no-go call. The `$300` and the attempt are real costs.
 
 | Signal | Decision |
 |---|---|
@@ -69,4 +67,4 @@ Around **Dec 8, 2026** (one week out), make a deliberate go/no-go call. The $300
 
 Rescheduling is a strategy, not a failure. A later pass beats an on-time fail. Record your decision and, if pushing, pick the new date and re-enter the plan at the weakest domain.
 
-Related: W8 checkpoint in [PLAN-ESTRATEGICO.md](/plan-estrategico) · all [blueprints](/blueprint/vision-examen) · [resources](/recursos).
+Related: [8-week plan](/plan-estrategico) · all [blueprints](/blueprint/vision-examen) · [resources](/recursos).

@@ -4,18 +4,18 @@ sidebar_position: 1
 title: Practice Question Bank
 ---
 
-~50 original, scenario-style questions weighted toward the heavier domains (D1 ≈ 12, D2 ≈ 10, D3 ≈ 10, D4 ≈ 8, D5 ≈ 8). Several are multiple-response (labeled **Select TWO**) to rehearse the all-or-nothing rule.
+Original, scenario-style questions weighted toward the heavier domains. Several are multiple-response (**Select TWO**) to rehearse the all-or-nothing rule. The per-question rationale — why the right answer wins and why distractors lose — is the point.
 
-**These questions are original.** They do not reproduce or imitate real AWS exam items. They exist to drill scenario-reading and the [master constraint table](/tablas-decision/decision-por-restriccion).
+**Original questions.** They do not reproduce or imitate real AWS exam items.
 
 Back to [course home](/) · then run the [final mock](/practica/simulacro-final).
 
 ## How to use
 
-1. Cover the answer key. Give yourself ~2.4 minutes per question.
-2. **Before** choosing, name the decisive **constraint keyword** in the stem.
-3. For **Select TWO**, judge each option independently (no partial credit).
-4. Score yourself per domain; take weak domains back to the matching [blueprint](/blueprint/dominio-1-fundacion-datos) file.
+1. Cover the answer key; ~2.4 min/question.
+2. Name the decisive **constraint keyword** before choosing.
+3. On **Select TWO**, judge each option independently (no partial credit).
+4. Score per domain; take weak domains back to the matching [blueprint](/blueprint/dominio-1-fundacion-datos).
 
 ---
 
@@ -339,6 +339,42 @@ Back to [course home](/) · then run the [final mock](/practica/simulacro-final)
 
 ---
 
+## Harder discriminators (near-neighbor contrasts & qualifier-flips)
+
+**Q50.** A team wants managed RAG with the **least operational overhead** AND needs **hybrid (keyword + semantic) search with relevance tuning**. Which single choice best satisfies both?
+- A) Bedrock Knowledge Bases with default settings
+- B) Amazon OpenSearch Serverless
+- C) Aurora pgvector
+- D) S3 Vectors
+
+**Q51. (Select TWO)** A regulated chatbot must keep inference data **private and in-region** while also being **as cheap as possible**. The stem stresses the regulator will not accept any data leaving the region. Pick the TWO actions you take first.
+- A) Interface VPC Endpoints via PrivateLink
+- B) An in-region / EU inference profile
+- C) Batch Inference API to cut cost
+- D) Prompt caching to cut cost
+- E) A public endpoint with an IP allow-list
+
+**Q52.** A nightly pipeline must summarize 1M documents offline at the lowest cost. One option says "Use **AWS Batch** to run the inference jobs." Why is that the trap?
+- A) AWS Batch cannot run at night
+- B) AWS Batch is generic compute and out of scope; the cost lever is the Bedrock **Batch Inference API**
+- C) AWS Batch does not support S3
+- D) Nothing — AWS Batch is correct
+
+**Q53.** A scenario asks for the **best** way to reduce cost on a real-time chat app. One option is "**Batch Inference API** for the chat requests." It is a real, valid cost-saving service. Why is it still wrong here?
+- A) Batch Inference is more expensive than On-Demand
+- B) Batch Inference is non-real-time; it ignores the stem's real-time constraint (true-but-irrelevant)
+- C) Batch Inference does not work with chat models
+- D) It is deprecated
+
+**Q54. (Select TWO)** An agent app that "feels slow to start" AND returns answers that "sometimes include facts not in the knowledge base." Pick the TWO fixes.
+- A) Response streaming to cut time-to-first-token
+- B) Guardrails Contextual Grounding to block ungrounded output
+- C) Provisioned Throughput to remove cold starts
+- D) A larger model to reduce hallucination
+- E) Prompt caching
+
+---
+
 ## Answer key & explanations
 
 | # | Answer | Why the right answer wins (and why top distractors lose) |
@@ -392,5 +428,10 @@ Back to [course home](/) · then run the [final mock](/practica/simulacro-final)
 | Q47 | **B** | Low signal-to-noise = Context Precision; fix with reranking + semantic chunking. The others misidentify metric or fix. |
 | Q48 | **B** | Jitter randomizes retry timing so clients don't retry in lockstep (thundering herd). It doesn't add retries, cut cost, or encrypt. |
 | Q49 | **B** | Dynamic masking + recovery / safe fallback degrades gracefully. Removing Guardrails is unsafe; infinite retries and Batch don't fix the block. |
+| Q50 | **B** | When "hybrid search + relevance tuning" is stacked onto "least overhead," hybrid control is the deciding axis only OpenSearch Serverless satisfies — the tie-break goes to it, not to Knowledge Bases' defaults (A), which don't give you that control. pgvector/S3 Vectors aren't hybrid search. |
+| Q51 | **A, B** | Privacy/residency is a **hard** constraint and outranks the soft cost preference, so the first two actions keep data private and in-region: PrivateLink (private path) + in-region inference profile (residency). Batch/caching (C/D) chase cost, not the gating requirement; a public endpoint with an IP list (E) still crosses the internet. |
+| Q52 | **B** | **AWS Batch** is generic compute and out of scope; the discounted async path for model inference is the Bedrock **Batch Inference API**. The exam deliberately places the two near each other to catch the name-match. |
+| Q53 | **B** | Batch Inference is a genuine cost lever, but it is non-real-time — it ignores the stem's governing *real-time* constraint. A valid service that fights the constraint is the classic true-but-irrelevant distractor. |
+| Q54 | **A, B** | Two independent problems, two independent fixes: streaming cuts time-to-first-token (the "slow to start" symptom), and Contextual Grounding blocks ungrounded facts (the hallucination symptom). Provisioned (C) doesn't fix perceived start-latency the way streaming does; a bigger model (D) does not reliably stop hallucination; caching (E) addresses neither. |
 
 Next: take the [final mock & readiness gate](/practica/simulacro-final). Review weak domains in the [blueprints](/blueprint/vision-examen) and the [master constraint table](/tablas-decision/decision-por-restriccion).

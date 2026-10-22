@@ -4,108 +4,78 @@ sidebar_position: 1
 title: Exam Format & Strategy
 ---
 
-Before you study any content, learn how the exam is scored and how to read it. A Professional-tier exam is often less about knowing an obscure fact and more about **reading a scenario correctly and picking the best-fit answer under time pressure**. This file teaches that discipline.
+You know the AWS content from the official prep. What that prep does not drill is **how to read a Pro-tier scenario under time pressure and eliminate near-correct distractors**. That is this file.
 
 Back to [course home](/).
 
-## Format & scoring
+## Format & scoring (once — this file owns the mechanics table)
 
 | Attribute | Value |
 |---|---|
-| Exam code / level | AIP-C01 / Professional |
 | Questions | 75 total — 65 scored + 10 unscored pretest (indistinguishable) |
 | Time | 180 minutes (~2.4 min/question) |
-| Cost | $300 USD *(confirm at registration)* |
-| Pass score | 750 on a 100–1,000 scaled range |
-| Scoring | Compensatory — your total counts; no per-domain minimum |
-| Question types | Multiple choice (1 correct of 4); multiple response (2+ correct of 5+) |
-| Partial credit | **None** on multiple response — all correct options required |
-| Blank answers | Scored as incorrect; **no guessing penalty** |
-| Delivery | Pearson VUE test center or online proctored |
-| Languages | English, Japanese, Korean, Simplified Chinese |
-| Validity | 3 years |
+| Cost | `$300 USD` *(confirm at registration)* |
+| Pass | 750 on a 100–1,000 scaled range |
+| Scoring | Compensatory — total counts, no per-domain minimum |
+| Question types | Multiple choice (1 of 4); multiple response (2+ of 5+) |
+| Partial credit | **None** on multiple response — the full set must be exactly right |
+| Blank answers | Scored wrong; no guessing penalty — so never leave one blank |
 
-**Takeaway:** 10 of your 75 questions do not count, but you cannot tell which. Treat every question as if it counts.
+Note: 10 of 75 do not count and you cannot tell which — treat every item as scored.
 
-## The all-or-nothing multiple-response rule
+## Scenario-reading discipline (the point of this page)
 
-Multiple-response questions ask you to "select TWO" (or more) from 5+ options and give **no partial credit** — you must get the full set exactly right. The reliable technique:
+1. **Read the question stem first, then the scenario.** Know what you are hunting for before you read the story.
+2. **Find the one governing qualifier.** Most stems bury a single decisive word: *lowest cost*, *fastest first token*, *least operational overhead*, *must stay private / data residency*, *detect hallucination*, *largest scale*, *compliance / audit*.
+3. **Map the keyword to a pattern** via the [master decision table](/tablas-decision/decision-por-restriccion), then eliminate options that fight the constraint.
+4. **A real AWS service that ignores this stem's constraint is still wrong.** True-but-irrelevant is the most common distractor.
 
-- **Treat each option as an independent true/false statement.** Decide for every option whether it is correct *on its own*, ignoring the others.
-- A "select TWO" with no partial credit means a 50%-right answer scores the same as a 0%-right answer. These items are high-variance, so slow down on them.
-- Watch for options that are individually true but **do not satisfy the scenario's constraint** — true-but-irrelevant is still wrong.
+### Constraint keyword teaser (full table is the master)
 
-## The clock
-
-75 questions in 180 minutes is about **2.4 minutes per question**. That is enough time to read carefully but not enough to agonize.
-
-- **Flag and move.** If a question costs more than ~3 minutes, pick your best guess, flag it, and come back. Never let one question eat the time of three others.
-- **Never leave a blank.** Unanswered = wrong, and there is no guessing penalty, so a guess strictly dominates a blank. Before you submit, confirm zero questions are unanswered.
-- Budget a final ~10–15 minutes to revisit flagged questions.
-
-## Compensatory scoring
-
-Compensatory scoring means there is **no minimum per domain** — a weak domain can be offset by strong ones as long as your total clears 750. Consequences for how you study:
-
-- Spend effort where **weight and your weakness overlap**. A 2% gain on a 31% domain is worth far more than mastering an 11% domain you already know.
-- Do not panic-cram a low-weight domain at the expense of D1/D2.
-
-## Scenario-reading discipline
-
-Most questions are a short scenario followed by "What should the developer do?" The winning habit:
-
-1. **Read the question stem first**, then the scenario, so you know what you are hunting for.
-2. **Find the one decisive constraint keyword.** Most scenarios bury a single governing word that dictates the answer: *lowest cost*, *minimal latency / fastest response*, *least operational overhead*, *must stay private / data residency*, *detect hallucination*, *largest scale*, *compliance / audit*.
-3. **Map the keyword to a pattern** using the master table below, then eliminate options that fight the constraint.
-4. Beware **distractors that are real AWS services doing a real job** — they are wrong only because they do not serve *this* constraint.
-
-### Constraint keyword → preferred pattern (teaser)
-
-This is a preview. The full lookup you should memorize is [the master decision table](/tablas-decision/decision-por-restriccion).
-
-| Constraint keyword in the stem | Preferred pattern (first instinct) |
+| Qualifier in the stem | First instinct |
 |---|---|
-| Lowest cost / reduce spend | Prompt caching, Batch Inference, model cascading, Intelligent Prompt Routing |
-| Lowest latency / fastest first token | Response streaming, Provisioned Throughput, WebSocket API |
-| Least operational overhead / minimal effort | Managed services (Bedrock Knowledge Bases, Bedrock Agents) |
-| Must stay private / data residency / strict security | PrivateLink VPC endpoints + IAM conditions + Guardrails |
-| Detect / prevent hallucination | Contextual Grounding check + RAGAS Faithfulness |
-| Ultra-large scale | S3 Vectors, OpenSearch Serverless |
+| Lowest cost / reduce spend | Prompt caching, Batch Inference, cascading, Intelligent Prompt Routing |
+| Fastest first token / lowest latency | Response streaming, Provisioned Throughput |
+| Least operational overhead | Managed (Bedrock Knowledge Bases, Bedrock Agents) |
+| Must stay private / data residency | PrivateLink VPC endpoints + IAM conditions |
+| Detect / prevent hallucination | Contextual Grounding + RAGAS Faithfulness |
 | Compliance / audit trail | Model Invocation Logging + CloudTrail + Audit Manager |
 
-## Out-of-scope topics
+Memorize the full lookup: [master decision table](/tablas-decision/decision-por-restriccion).
 
-These appear as tempting distractors but are **outside AIP-C01's scope**. If an option is one of these, it is almost certainly wrong for a GenAI-developer scenario.
+## Time budget
 
-| Out-of-scope topic | Why it is a distractor |
+- **~2.4 min/question.** Over ~3 minutes → pick a best guess, flag, move on.
+- **Never blank.** A guess strictly beats a blank; confirm zero unanswered before submit.
+- Keep a final **~10–15 min** to revisit flagged items.
+- Compensatory scoring → spend effort where **weight and your weakness overlap**. A 2% gain on D1 (31%) beats mastering an 11% domain you already know.
+
+## Multiple-response = all or nothing
+
+- Judge **each option independently** as a standalone true/false.
+- 50%-right scores the same as 0%-right. Slow down on these; they are high-variance.
+- An option can be individually true yet wrong because it ignores the stem's constraint.
+
+## Out-of-scope distractors (near-neighbor traps)
+
+These look plausible but sit outside AIP-C01's GenAI-developer scope — if an option is one of these, it is almost certainly wrong.
+
+| Distractor | Why it is wrong here |
 |---|---|
-| Training a foundation model from scratch | The exam is about *using/integrating* FMs, not building them |
-| Advanced classical ML (algorithm design, tuning) | Not a GenAI-developer task |
-| Data / feature engineering pipelines | Beyond GenAI integration scope |
-| Writing GPU kernels / low-level compute | Infrastructure concern, not GenAI dev |
-| AWS Batch as generic compute | Non-GenAI infra; do not confuse with the Bedrock **Batch Inference API** |
+| **AWS Batch** (generic compute) | Out of scope; do not confuse with the Bedrock **Batch Inference API** (async discounted model inference). The exam places both near each other on purpose. |
+| Training a foundation model from scratch | Exam is about *using/integrating* FMs, not building them |
 | Amazon Lightsail | Non-GenAI infra distractor |
 | Transit Gateway / Direct Connect | Non-GenAI networking distractors |
 
-**Trap alert:** "AWS Batch" (a batch *compute* service) is not the same as the **Batch Inference API** in Bedrock (async bulk model inference at a discount). The exam will put both near each other.
+## Self-check
 
-## Exam traps & key discriminators
+1. Why treat every one of the 75 as scored?
+2. On a "select TWO" with no partial credit, what technique cuts your error rate?
+3. What does compensatory scoring change about where you spend study hours?
+4. Give three constraint keywords and the first-instinct pattern each points to.
+5. Why is "AWS Batch" a trap, and what is it confused with?
+6. Minutes per question, and the flag-and-move rule?
 
-- **Blank = wrong.** Guessing is free; never submit an unanswered question.
-- **"Select TWO" = all or nothing.** Evaluate each option independently; no partial credit.
-- **True-but-irrelevant options** are the most common distractor — a valid service that ignores the stem's constraint.
-- **Compensatory scoring** means weight your prep by domain weight, not by what feels fun.
-- **AWS Batch ≠ Bedrock Batch Inference API.** One is out of scope; the other is a cost lever.
-- The **constraint keyword** decides the answer. If you can name it, you can usually eliminate three options.
+The rest of the mechanics (delivery, languages, validity, retake policy) are on the AWS exam guide — confirm there via [resources](/recursos).
 
-## Self-check (5–8 questions)
-
-1. How many of the 75 questions are scored, and what is the pass score on what scale?
-2. Why should you never leave a question blank?
-3. On a "select TWO" item with no partial credit, what technique reduces your error rate?
-4. What does compensatory scoring change about how you allocate study hours?
-5. Give three constraint keywords and the first-instinct pattern each one points to.
-6. Why is "AWS Batch" a trap answer on this exam?
-7. Roughly how many minutes per question do you have, and what is the flag-and-move rule?
-
-Next: [Domain 1 — Foundation, Data & Compliance](/blueprint/dominio-1-fundacion-datos). Practice: [question bank](/practica/banco-preguntas).
+Next: [Domain 1](/blueprint/dominio-1-fundacion-datos). Practice: [question bank](/practica/banco-preguntas).

@@ -4,7 +4,7 @@ sidebar_position: 2
 title: Vector & Search Stores
 ---
 
-RAG (Retrieval-Augmented Generation = feeding a model relevant documents at query time) needs somewhere to store and search embeddings (numeric vector representations of text). AIP-C01 repeatedly asks you to pick the **right** store for a given constraint. Memorize this table.
+The exam repeatedly asks you to pick the **right** store for a stated constraint. Memorize this table — the decisive keyword per store is the whole game.
 
 Back to [course home](/) · [Domain 1](/blueprint/dominio-1-fundacion-datos) · [master constraint table](/tablas-decision/decision-por-restriccion).
 

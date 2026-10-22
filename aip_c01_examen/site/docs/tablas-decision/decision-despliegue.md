@@ -4,7 +4,7 @@ sidebar_position: 3
 title: Deployment & Inference Modes
 ---
 
-How you serve a model drives cost, latency, and operational effort. AIP-C01 tests whether you can match an inference mode to a workload's constraint. Memorize this table alongside the [master constraint table](/tablas-decision/decision-por-restriccion).
+Match an inference mode to the workload's constraint. Memorize this alongside the [master constraint table](/tablas-decision/decision-por-restriccion).
 
 Back to [course home](/) · [Domain 2](/blueprint/dominio-2-implementacion) · [Domain 4](/blueprint/dominio-4-optimizacion).
 
