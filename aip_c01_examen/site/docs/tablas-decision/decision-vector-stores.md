@@ -4,7 +4,7 @@ sidebar_position: 2
 title: Vector & Search Stores
 ---
 
-The exam repeatedly asks you to pick the **right** store for a stated constraint. Memorize this table — the decisive keyword per store is the whole game.
+This table **summarizes the vector-store reasoning taught in [Domain 1](/blueprint/dominio-1-fundacion-datos)** — go there to learn *why* each store wins its case; come here to review and quick-reference. The exam repeatedly asks you to pick the **right** store for a stated constraint, and the decisive keyword per store is the whole game.
 
 Back to [course home](/) · [Domain 1](/blueprint/dominio-1-fundacion-datos) · [master constraint table](/tablas-decision/decision-por-restriccion).
 

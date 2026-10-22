@@ -4,7 +4,7 @@ sidebar_position: 3
 title: Resources
 ---
 
-**You now have the differentiated base.** Use this page to (1) **confirm the specifics** this course deliberately did not pin down, and (2) **drill the official AWS practice set** on Skill Builder. That bridge is this page's job.
+**You have now learned the concepts and the reasoning.** Use this page to (1) **confirm the specifics** this course deliberately did not pin down, and (2) **drill the official AWS practice set** on Skill Builder for breadth. This course is the base layer that teaches the material; this page is the bridge to official prep.
 
 Prices, dates, and exam-guide revisions change — **verify at registration**.
 

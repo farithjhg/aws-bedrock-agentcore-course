@@ -4,7 +4,7 @@ sidebar_position: 1
 title: Master Decision Table
 ---
 
-The crown jewel. Nearly every AIP-C01 scenario hides **one governing constraint**. Name it, and this table gives you the preferred service or pattern and kills the distractors.
+This is the **consolidated recap** of the reasoning taught across the domain chapters — not a shortcut around them. Learn *why* each pattern wins in the chapters (every row's Domain column links to the arc that teaches it); use this table afterward as the fast lookup. Nearly every AIP-C01 scenario hides **one governing constraint**: name it, and this table gives you the preferred service or pattern and kills the distractors.
 
 Back to [course home](/). See also [vector store table](/tablas-decision/decision-vector-stores) and [deployment table](/tablas-decision/decision-despliegue).
 

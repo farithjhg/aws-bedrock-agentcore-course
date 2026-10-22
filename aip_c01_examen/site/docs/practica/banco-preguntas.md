@@ -4,7 +4,7 @@ sidebar_position: 1
 title: Practice Question Bank
 ---
 
-Original, scenario-style questions weighted toward the heavier domains. Several are multiple-response (**Select TWO**) to rehearse the all-or-nothing rule. The per-question rationale — why the right answer wins and why distractors lose — is the point.
+Original, scenario-style questions weighted toward the heavier domains, and set in the same **Northwind Support Assistant** story the chapters build. Several are multiple-response (**Select TWO**) to rehearse the all-or-nothing rule. The per-question rationale — why the right answer wins and why distractors lose — is the point; when a rationale names a concept, go back to the chapter arc that teaches it (linked per domain below).
 
 **Original questions.** They do not reproduce or imitate real AWS exam items.
 
@@ -20,6 +20,8 @@ Back to [course home](/) · then run the [final mock](/practica/simulacro-final)
 ---
 
 ## Domain 1 (≈12) — Foundation, Data & Compliance
+
+Concepts here are taught in [Domain 1](/blueprint/dominio-1-fundacion-datos) (RAG vs fine-tuning, model families, chunking, vector stores). Re-read the matching arc on any miss.
 
 **Q1.** A support bot must answer using the company's constantly updated internal PDFs without retraining. Best approach?
 - A) Full fine-tuning nightly
@@ -99,6 +101,8 @@ Back to [course home](/) · then run the [final mock](/practica/simulacro-final)
 
 ## Domain 2 (≈10) — Implementation & Integration
 
+Concepts here are taught in [Domain 2](/blueprint/dominio-2-implementacion) (AgentCore components, tools, orchestration, streaming, deployment). Re-read the matching arc on any miss.
+
 **Q13.** A chat UI "feels slow to start responding" even though total latency is acceptable. Best fix?
 - A) Provisioned Throughput
 - B) Response streaming (`InvokeModelWithResponseStream` / Converse streaming)
@@ -170,6 +174,8 @@ Back to [course home](/) · then run the [final mock](/practica/simulacro-final)
 
 ## Domain 3 (≈10) — AI Safety, Security & Governance
 
+Concepts here are taught in [Domain 3](/blueprint/dominio-3-seguridad) (Guardrail layers, PrivateLink, PII, audit/lineage, bias/drift). Re-read the matching arc on any miss.
+
 **Q24.** Bedrock traffic must never traverse the public internet. Best control?
 - A) Put the endpoint behind a public URL with an IP allow-list
 - B) Interface VPC Endpoints via AWS PrivateLink
@@ -235,6 +241,8 @@ Back to [course home](/) · then run the [final mock](/practica/simulacro-final)
 
 ## Domain 4 (≈8) — Operational Efficiency & Optimization
 
+Concepts here are taught in [Domain 4](/blueprint/dominio-4-optimizacion) (cost levers, latency levers, observability triad, throttling resilience). Re-read the matching arc on any miss.
+
 **Q34.** Every request sends the same 3,000-token system prompt and few-shot examples. Cheapest lever?
 - A) Switch to a larger model
 - B) Prompt Caching
@@ -287,6 +295,8 @@ Back to [course home](/) · then run the [final mock](/practica/simulacro-final)
 ---
 
 ## Domain 5 (≈8) — Testing, Validation & Troubleshooting
+
+Concepts here are taught in [Domain 5](/blueprint/dominio-5-testing) (RAGAS metrics and fixes, LLM-as-judge, regression testing, structured output, resilience). Re-read the matching arc on any miss.
 
 **Q42.** The bot confidently states facts not in the knowledge base. Which RAGAS metric detects this, and which control prevents it?
 - A) Context Precision → reranking

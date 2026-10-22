@@ -4,7 +4,7 @@ sidebar_position: 3
 title: Deployment & Inference Modes
 ---
 
-Match an inference mode to the workload's constraint. Memorize this alongside the [master constraint table](/tablas-decision/decision-por-restriccion).
+This table **summarizes the deployment- and inference-mode reasoning taught in [Domain 2](/blueprint/dominio-2-implementacion) and [Domain 4](/blueprint/dominio-4-optimizacion)** — learn *why* each mode fits its workload there; use this as the review lookup. Match an inference mode to the workload's constraint, and keep it alongside the [master constraint table](/tablas-decision/decision-por-restriccion).
 
 Back to [course home](/) · [Domain 2](/blueprint/dominio-2-implementacion) · [Domain 4](/blueprint/dominio-4-optimizacion).
 

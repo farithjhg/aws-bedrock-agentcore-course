@@ -14,7 +14,7 @@ Back to [course home](/).
 - **Source mix:** the **official AWS practice set** ([resources](/recursos)) + this course's [question bank](/practica/banco-preguntas). The official set matters most — don't judge readiness on this bank alone.
 - **~2.4 min/question**; flag anything over ~3 min and move on.
 - **Leave nothing blank.**
-- Review **every** miss back to its [blueprint](/blueprint/vision-examen) section and the [master constraint table](/tablas-decision/decision-por-restriccion).
+- Review **every** miss back to the teaching arc in its [domain chapter](/blueprint/vision-examen) and the [master constraint table](/tablas-decision/decision-por-restriccion).
 
 ## Domain-by-domain readiness checklist
 
