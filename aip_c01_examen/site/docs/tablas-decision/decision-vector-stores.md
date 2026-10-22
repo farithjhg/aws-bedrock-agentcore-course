@@ -1,5 +1,5 @@
 ---
-id: tablas-decision/decision-vector-stores
+id: decision-vector-stores
 sidebar_position: 2
 title: Vector & Search Stores
 ---

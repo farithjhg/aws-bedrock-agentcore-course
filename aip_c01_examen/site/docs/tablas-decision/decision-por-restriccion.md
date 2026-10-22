@@ -1,5 +1,5 @@
 ---
-id: tablas-decision/decision-por-restriccion
+id: decision-por-restriccion
 sidebar_position: 1
 title: Master Decision Table
 ---

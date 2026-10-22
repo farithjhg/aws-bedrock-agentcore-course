@@ -1,5 +1,5 @@
 ---
-id: blueprint/dominio-2-implementacion
+id: dominio-2-implementacion
 sidebar_position: 3
 title: Domain 2 — Implementation & Integration (26%)
 ---

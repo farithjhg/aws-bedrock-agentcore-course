@@ -1,5 +1,5 @@
 ---
-id: blueprint/dominio-4-optimizacion
+id: dominio-4-optimizacion
 sidebar_position: 5
 title: Domain 4 — Operational Efficiency & Optimization (12%)
 ---

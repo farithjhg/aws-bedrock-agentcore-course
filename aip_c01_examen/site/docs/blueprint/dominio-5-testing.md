@@ -1,5 +1,5 @@
 ---
-id: blueprint/dominio-5-testing
+id: dominio-5-testing
 sidebar_position: 6
 title: Domain 5 — Testing, Validation & Troubleshooting (11%)
 ---

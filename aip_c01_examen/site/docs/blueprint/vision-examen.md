@@ -1,5 +1,5 @@
 ---
-id: blueprint/vision-examen
+id: vision-examen
 sidebar_position: 1
 title: Exam Format & Strategy
 ---

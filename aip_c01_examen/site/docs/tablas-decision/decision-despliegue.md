@@ -1,5 +1,5 @@
 ---
-id: tablas-decision/decision-despliegue
+id: decision-despliegue
 sidebar_position: 3
 title: Deployment & Inference Modes
 ---

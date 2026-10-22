@@ -1,5 +1,5 @@
 ---
-id: blueprint/dominio-1-fundacion-datos
+id: dominio-1-fundacion-datos
 sidebar_position: 2
 title: Domain 1 — Foundation, Data & Compliance (31%)
 ---

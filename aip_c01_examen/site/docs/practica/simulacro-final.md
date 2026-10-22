@@ -1,5 +1,5 @@
 ---
-id: practica/simulacro-final
+id: simulacro-final
 sidebar_position: 3
 title: Final Mock & Readiness Gate
 ---

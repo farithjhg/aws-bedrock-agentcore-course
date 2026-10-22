@@ -1,5 +1,5 @@
 ---
-id: practica/banco-preguntas
+id: banco-preguntas
 sidebar_position: 1
 title: Practice Question Bank
 ---

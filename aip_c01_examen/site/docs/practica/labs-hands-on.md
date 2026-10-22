@@ -1,5 +1,5 @@
 ---
-id: practica/labs-hands-on
+id: labs-hands-on
 sidebar_position: 2
 title: Optional Hands-On Labs
 ---

@@ -1,5 +1,5 @@
 ---
-id: blueprint/dominio-3-seguridad
+id: dominio-3-seguridad
 sidebar_position: 4
 title: Domain 3 — AI Safety, Security & Governance (20%)
 ---
