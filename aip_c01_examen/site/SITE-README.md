@@ -15,21 +15,29 @@ mechanisms and the verification evidence.
 
 ## outDir mechanism (how built assets reach the subpath)
 
-`docusaurus.config.ts` sets **`outDir: '../'`**, so `npm run build` (run inside
-`aip_c01_examen/site/`) writes the compiled static site directly into
-`aip_c01_examen/`. Combined with `baseUrl: '/aws-bedrock-agentcore-course/aip_c01_examen/'`,
-every emitted asset is already prefixed for the subpath.
+**Corrected approach (v2).** The original plan used `outDir: '../'` as a Docusaurus
+config field. That is wrong on two counts: (1) `outDir` is a **CLI flag** in Docusaurus
+v3, not a `docusaurus.config.ts` field — the build fails validation with
+`These field(s) ("outDir",) are not recognized`; and (2) pointing the output at the
+parent dir is unsafe because Docusaurus **cleans its output directory before building**,
+which would delete the `site/` source mid-build.
 
-The GitHub Pages workflow uploads the whole repo (`upload-pages-artifact` with
-`path: .`), so whatever physically sits at `aip_c01_examen/` is served at
-`/aws-bedrock-agentcore-course/aip_c01_examen/`. Writing the build output there directly
-means **no post-build copy step**.
+The working mechanism:
 
-The Docusaurus **source** (`node_modules/`, `src/`, `docusaurus.config.ts`,
-`package.json`, `sidebars.ts`, `.docusaurus/` cache) all live under
-`aip_c01_examen/site/` — a subdirectory of the output dir. It is never the served index
-and nothing links to it, so its physical presence under the published dir is harmless.
-`node_modules`, `.docusaurus`, and a stray `build/` are gitignored (see below).
+1. `npm run build` (run in `aip_c01_examen/site/`) writes to the **default**
+   `aip_c01_examen/site/build/`. `baseUrl: '/aws-bedrock-agentcore-course/aip_c01_examen/'`
+   still prefixes every asset for the subpath.
+2. The Pages workflow then, in a **"Stage built site" step**, removes the stale
+   root-level files of the exam course (everything under `aip_c01_examen/` except `site/`)
+   and copies `aip_c01_examen/site/build/.` into `aip_c01_examen/`.
+3. `upload-pages-artifact` with `path: .` publishes the whole repo, so the compiled site
+   now physically at `aip_c01_examen/` is served at the subpath. The AgentCore course at
+   `intro_4h_agentcore/` is untouched.
+
+The original course `.md` files that used to sit at `aip_c01_examen/` root (and the old
+`index.html`) have been **removed from version control** — the single source of truth is
+now `aip_c01_examen/site/docs/`. `node_modules`, `.docusaurus`, and `build/` are
+gitignored.
 
 ## Key config choices
 

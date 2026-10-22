@@ -17,9 +17,10 @@ const config: Config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
 
-  // Build output lands in aip_c01_examen/ (the published subpath). The Docusaurus
-  // source stays in aip_c01_examen/site/ and is never served. See SITE-README.md.
-  outDir: '../',
+  // Build output goes to the default aip_c01_examen/site/build. The Pages
+  // workflow copies that compiled output into aip_c01_examen/ so it is served
+  // at baseUrl. (outDir is a Docusaurus v3 CLI flag, not a config field, and
+  // pointing it at the parent dir would delete the source during the build.)
 
   i18n: {
     defaultLocale: 'en',

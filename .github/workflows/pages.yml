@@ -30,8 +30,18 @@ jobs:
       - name: Build AIP-C01 Docusaurus site
         working-directory: aip_c01_examen/site
         run: |
+          # npm install (not npm ci) on purpose: no package-lock.json is committed,
+          # and npm ci requires a lockfile. The first successful CI build generates
+          # the dependency tree fresh.
           npm install
           npm run build
+      - name: Stage built site at aip_c01_examen/
+        run: |
+          # Remove stale root-level files of the exam course (the source of truth
+          # now lives in aip_c01_examen/site/docs/); keep the Docusaurus source dir.
+          find aip_c01_examen -mindepth 1 -maxdepth 1 ! -name site -exec rm -rf {} +
+          # Copy the compiled Docusaurus output into the published subpath.
+          cp -r aip_c01_examen/site/build/. aip_c01_examen/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
