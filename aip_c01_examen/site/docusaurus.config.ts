@@ -27,6 +27,8 @@ const config: Config = {
     locales: ['en'],
   },
 
+  plugins: ['./plugins/chat-index/index.ts'],
+
   presets: [
     [
       'classic',

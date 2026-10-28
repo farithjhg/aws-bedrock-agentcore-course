@@ -5,15 +5,40 @@
   },
   "hooks": {
     "PreToolUse": [
-      { "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
-        "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/harness/guard.sh\"" }] }
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/harness/guard.sh",
+            "powershell": "& 'C:\\Program Files\\Git\\bin\\bash.exe' '.claude\\harness\\guard.sh'; exit $LASTEXITCODE"
+          }
+        ]
+      }
     ],
     "Stop": [
-      { "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/harness/gate.sh\"", "timeout": 180 }] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/harness/gate.sh",
+            "powershell": "& 'C:\\Program Files\\Git\\bin\\bash.exe' '.claude\\harness\\gate.sh'; exit $LASTEXITCODE",
+            "timeout": 180
+          }
+        ]
+      }
     ],
     "SessionStart": [
-      { "matcher": "compact|resume",
-        "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/harness/resume.sh\"" }] }
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/harness/resume.sh",
+            "powershell": "& 'C:\\Program Files\\Git\\bin\\bash.exe' '.claude\\harness\\resume.sh'; exit $LASTEXITCODE"
+          }
+        ]
+      }
     ]
   }
 }
